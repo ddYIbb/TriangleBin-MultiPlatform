@@ -4,17 +4,17 @@
 
 [TriangleBin](https://github.com/Swung0x48/TriangleBin) 的多平台移植合集，用于测试 GPU 的填充率与着色顺序：
 
-- **Windows DX** — Direct3D 11 / 12，x86 / x64 / ARM64，支持 Windows 7 及更新系统
+- **Windows DirectX** — Direct3D 11 / 12，x86 / x64 / ARM64，支持 Windows 7 及更新系统
 - **Windows Vulkan** — Vulkan 1.0，x86 / x64 / ARM64，支持 Windows 7 及更新系统（需显卡驱动提供 Vulkan 支持）
-- **macOS** — Intel（macOS 10.15+）与 Apple Silicon（macOS 11.0+）通用版
+- **macOS Metal** — Intel（macOS 10.15+）与 Apple Silicon（macOS 11.0+）通用版
 
-本仓库包含 Windows DirectX 版源码，并在 [Releases](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases) 中发布 Windows DX、Windows Vulkan 和 macOS 三个版本的成品。下文继续说明 DirectX 版的细节与编译方法。
+本仓库包含 Windows DirectX 版源码，并在 [Releases](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases) 中发布 Windows DirectX、Windows Vulkan 和 macOS Metal 三个版本的成品。下文继续说明 Windows DirectX 版的细节与编译方法。
 
 它会绘制一叠互相重叠的三角形，并统计 GPU 实际光栅化了多少个片段。这个数量可以判断你的
 显卡是 **IMR**（立即模式渲染，每个三角形的每个覆盖像素都要着色）还是 **TBR**
 （分块渲染，几何按 tile 分桶，每个像素基本只着色一次）。
 
-![TriangleBin-DX 的 Controls 窗口与 Select GPU 窗口](docs/screenshot.png)
+![TriangleBin DirectX 的 Controls 窗口与 Select GPU 窗口](docs/screenshot.png)
 
 ## 下载
 
@@ -22,11 +22,11 @@
 
 | 平台 | Release 文件 |
 |---|---|
-| Windows DX | [TriangleBin-Windows-DX-v1.1.0.exe](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Windows-DX-v1.1.0.exe) |
+| Windows DirectX | [TriangleBin-Windows-DX-v1.1.0.exe](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Windows-DX-v1.1.0.exe) |
 | Windows Vulkan | [TriangleBin-Windows-Vulkan-v1.1.0.exe](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Windows-Vulkan-v1.1.0.exe) |
-| macOS | [TriangleBin-macOS-v1.1.0.zip](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-macOS-v1.1.0.zip) |
+| macOS Metal | [TriangleBin-macOS-v1.1.0.zip](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-macOS-v1.1.0.zip) |
 
-Windows DX 启动器一个文件支持全部架构：启动时自动识别 CPU，运行对应的 x64 / x86 / ARM64
+Windows DirectX 启动器一个文件支持全部架构：启动时自动识别 CPU，运行对应的 x64 / x86 / ARM64
 版本，退出后自动清理。不需要安装，也不写注册表。它支持 Windows 7 及更新系统；Windows
 10/11 且显卡支持时会自动使用 Direct3D 12，较老的系统则自动回退到 Direct3D 11。所有着色器
 已在编译期嵌入，无需安装 `d3dcompiler_47.dll` 或其它运行库。
@@ -34,10 +34,10 @@ Windows DX 启动器一个文件支持全部架构：启动时自动识别 CPU�
 Windows Vulkan 版同样是 x86 / x64 / ARM64 单文件启动器，目标系统为 Windows 7 及更新版本，
 使用 Vulkan 1.0 核心与 `VK_KHR_swapchain`，需要显卡驱动提供 Vulkan loader。
 
-macOS 版下载后解压得到 `TriangleBin.app`，为 Intel 与 Apple Silicon 通用二进制。若首次打开
+macOS Metal 版下载后解压得到 `TriangleBin.app`，为 Intel 与 Apple Silicon 通用二进制。若首次打开
 被 Gatekeeper 拦截，请右键选择“打开”。
 
-想自己编译 Windows DX 版源码的话，见下面的[编译](#编译)一节。
+想自己编译 Windows DirectX 版源码的话，见下面的[编译](#编译)一节。
 
 ## 与原项目的关系
 
@@ -45,7 +45,7 @@ macOS 版下载后解压得到 `TriangleBin.app`，为 Intel 与 Apple Silicon �
 [TriangleBin](https://github.com/Swung0x48/TriangleBin)（MIT），渲染器、构建系统和
 平台支持则针对 DirectX 重写。
 
-| | [TriangleBin](https://github.com/Swung0x48/TriangleBin) | TriangleBin-DX 源码（本仓库） |
+| | [TriangleBin](https://github.com/Swung0x48/TriangleBin) | TriangleBin DirectX 源码（本仓库） |
 |---|---|---|
 | 图形 API | OpenGL / OpenGL ES | Direct3D 12，失败时回退 Direct3D 11 |
 | 平台 | Android（APK）+ Windows x64 | Windows：x86 / x64 / ARM64 |

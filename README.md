@@ -4,18 +4,18 @@ English | [中文](README_CN.md)
 
 A multi-platform collection of ports of [TriangleBin](https://github.com/Swung0x48/TriangleBin), the GPU fill-rate and shader-order test:
 
-- **Windows DX** — Direct3D 11 and 12, x86 / x64 / ARM64, Windows 7 and later
+- **Windows DirectX** — Direct3D 11 and 12, x86 / x64 / ARM64, Windows 7 and later
 - **Windows Vulkan** — Vulkan 1.0, x86 / x64 / ARM64, Windows 7 and later with a Vulkan-capable driver
-- **macOS** — universal app for Intel (macOS 10.15+) and Apple Silicon (macOS 11.0+)
+- **macOS Metal** — universal app for Intel (macOS 10.15+) and Apple Silicon (macOS 11.0+)
 
-This repository contains the Windows DirectX source tree and publishes all three builds in [Releases](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases). The rest of this document describes the DirectX port and its build.
+This repository contains the Windows DirectX source tree and publishes all three builds in [Releases](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases). The rest of this document describes the Windows DirectX port and its build.
 
 It draws a stack of overlapping triangles and counts how many fragments the GPU actually
 shades. That count is what tells you whether your GPU is an **IMR** (immediate-mode
 renderer, shades every covered pixel of every triangle) or a **TBR** (tile-based renderer,
 bins geometry per tile and shades each pixel roughly once).
 
-![TriangleBin-DX showing the Controls window and the Select GPU window](docs/screenshot.png)
+![TriangleBin DirectX showing the Controls window and the Select GPU window](docs/screenshot.png)
 
 ## Download
 
@@ -23,11 +23,11 @@ The latest release is [v1.1.0](https://github.com/ddYIbb/TriangleBin-MultiPlatfo
 
 | Platform | Release asset |
 |---|---|
-| Windows DX | [TriangleBin-Windows-DX-v1.1.0.exe](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Windows-DX-v1.1.0.exe) |
+| Windows DirectX | [TriangleBin-Windows-DX-v1.1.0.exe](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Windows-DX-v1.1.0.exe) |
 | Windows Vulkan | [TriangleBin-Windows-Vulkan-v1.1.0.exe](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Windows-Vulkan-v1.1.0.exe) |
-| macOS | [TriangleBin-macOS-v1.1.0.zip](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-macOS-v1.1.0.zip) |
+| macOS Metal | [TriangleBin-macOS-v1.1.0.zip](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-macOS-v1.1.0.zip) |
 
-The Windows DX launcher is a single file for every architecture: it detects the host CPU,
+The Windows DirectX launcher is a single file for every architecture: it detects the host CPU,
 runs the matching x64 / x86 / ARM64 build, and cleans up after itself when it exits. No
 installer, nothing written to the registry. It runs on Windows 7 and later. Direct3D 12 is
 used automatically on Windows 10/11 with a capable GPU; on older systems the app falls back
@@ -38,10 +38,10 @@ The Windows Vulkan launcher is also a single file for x86 / x64 / ARM64. It targ
 Windows 7 and later, uses Vulkan 1.0 core with `VK_KHR_swapchain`, and requires the
 graphics driver's Vulkan loader.
 
-The macOS download is a zip containing `TriangleBin.app`, a universal binary for Intel and
+The macOS Metal download is a zip containing `TriangleBin.app`, a universal binary for Intel and
 Apple Silicon. If Gatekeeper blocks the first launch, right-click the app and choose **Open**.
 
-To build the Windows DX source yourself instead, see [Building](#building).
+To build the Windows DirectX source yourself instead, see [Building](#building).
 
 ## Relationship to the original
 
@@ -50,7 +50,7 @@ measurement are taken from [TriangleBin](https://github.com/Swung0x48/TriangleBi
 Swung 0x48 (MIT); the renderer, the build system and the platform support were rewritten
 for DirectX.
 
-| | [TriangleBin](https://github.com/Swung0x48/TriangleBin) | TriangleBin-DX source (this repository) |
+| | [TriangleBin](https://github.com/Swung0x48/TriangleBin) | TriangleBin DirectX source (this repository) |
 |---|---|---|
 | Graphics API | OpenGL / OpenGL ES | Direct3D 12, falls back to Direct3D 11 |
 | Platforms | Android (APK) + Windows x64 | Windows: x86, x64, ARM64 |
