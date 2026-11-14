@@ -22,9 +22,9 @@
 
 | 平台 | Release 文件 |
 |---|---|
-| Windows DirectX | [TriangleBin-Windows-DX-v1.1.0.exe](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Windows-DX-v1.1.0.exe) |
+| Windows DirectX | [TriangleBin-Windows-DirectX-v1.1.0.exe](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Windows-DirectX-v1.1.0.exe) |
 | Windows Vulkan | [TriangleBin-Windows-Vulkan-v1.1.0.exe](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Windows-Vulkan-v1.1.0.exe) |
-| macOS Metal | [TriangleBin-macOS-v1.1.0.zip](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-macOS-v1.1.0.zip) |
+| macOS Metal | [TriangleBin-macOS-Metal-v1.1.0.zip](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-macOS-Metal-v1.1.0.zip) |
 
 Windows DirectX 启动器一个文件支持全部架构：启动时自动识别 CPU，运行对应的 x64 / x86 / ARM64
 版本，退出后自动清理。不需要安装，也不写注册表。它支持 Windows 7 及更新系统；Windows

@@ -23,9 +23,9 @@ The latest release is [v1.1.0](https://github.com/ddYIbb/TriangleBin-MultiPlatfo
 
 | Platform | Release asset |
 |---|---|
-| Windows DirectX | [TriangleBin-Windows-DX-v1.1.0.exe](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Windows-DX-v1.1.0.exe) |
+| Windows DirectX | [TriangleBin-Windows-DirectX-v1.1.0.exe](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Windows-DirectX-v1.1.0.exe) |
 | Windows Vulkan | [TriangleBin-Windows-Vulkan-v1.1.0.exe](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Windows-Vulkan-v1.1.0.exe) |
-| macOS Metal | [TriangleBin-macOS-v1.1.0.zip](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-macOS-v1.1.0.zip) |
+| macOS Metal | [TriangleBin-macOS-Metal-v1.1.0.zip](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-macOS-Metal-v1.1.0.zip) |
 
 The Windows DirectX launcher is a single file for every architecture: it detects the host CPU,
 runs the matching x64 / x86 / ARM64 build, and cleans up after itself when it exits. No
