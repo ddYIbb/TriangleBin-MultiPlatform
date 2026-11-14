@@ -1,130 +1,116 @@
 # TriangleBin-MultiPlatform
 
-English | [中文](README_CN.md)
+[English](README_EN.md) | 中文
 
-A multi-platform collection of ports of [TriangleBin](https://github.com/Swung0x48/TriangleBin), the GPU fill-rate and shader-order test:
+[TriangleBin](https://github.com/Swung0x48/TriangleBin) 的多平台移植合集，用于测试 GPU 的填充率与着色顺序：
 
-- **Windows DirectX** — Direct3D 11 and 12, x86 / x64 / ARM64, Windows 7 and later
-- **Windows Vulkan** — Vulkan 1.0, x86 / x64 / ARM64, Windows 7 and later with a Vulkan-capable driver
-- **macOS Metal** — universal app for Intel (macOS 10.15+) and Apple Silicon (macOS 11.0+)
+- **Windows DirectX** — Direct3D 11 / 12，x86 / x64 / ARM64，支持 Windows 7 及更新系统
+- **Windows Vulkan** — Vulkan 1.0，x86 / x64 / ARM64，支持 Windows 7 及更新系统（需显卡驱动提供 Vulkan 支持）
+- **macOS Metal** — Intel（macOS 10.15+）与 Apple Silicon（macOS 11.0+）通用版
 
-This repository contains the Windows DirectX source tree and publishes all three builds in [Releases](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases). The rest of this document describes the Windows DirectX port and its build.
+本仓库包含 Windows DirectX 版源码，并在 [Releases](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases) 中发布 Windows DirectX、Windows Vulkan 和 macOS Metal 三个版本的成品。下文继续说明 Windows DirectX 版的细节与编译方法。
 
-It draws a stack of overlapping triangles and counts how many fragments the GPU actually
-shades. That count is what tells you whether your GPU is an **IMR** (immediate-mode
-renderer, shades every covered pixel of every triangle) or a **TBR** (tile-based renderer,
-bins geometry per tile and shades each pixel roughly once).
+它会绘制一叠互相重叠的三角形，并统计 GPU 实际光栅化了多少个片段。这个数量可以判断你的
+显卡是 **IMR**（立即模式渲染，每个三角形的每个覆盖像素都要着色）还是 **TBR**
+（分块渲染，几何按 tile 分桶，每个像素基本只着色一次）。
 
-![TriangleBin DirectX showing the Controls window and the Select GPU window](docs/screenshot.png)
+![TriangleBin DirectX 的 Controls 窗口与 Select GPU 窗口](docs/screenshot.png)
 
-## Download
+## 下载
 
-The latest release is [v1.1.0](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/tag/v1.1.0):
+最新版本：[v1.1.0](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/tag/v1.1.0)
 
-| Platform | Release asset |
+| 平台 | Release 文件 |
 |---|---|
 | Windows DirectX | [TriangleBin-Windows-DirectX-v1.1.0.exe](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Windows-DirectX-v1.1.0.exe) |
 | Windows Vulkan | [TriangleBin-Windows-Vulkan-v1.1.0.exe](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Windows-Vulkan-v1.1.0.exe) |
 | macOS Metal | [TriangleBin-macOS-Metal-v1.1.0.zip](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-macOS-Metal-v1.1.0.zip) |
 
-The Windows DirectX launcher is a single file for every architecture: it detects the host CPU,
-runs the matching x64 / x86 / ARM64 build, and cleans up after itself when it exits. No
-installer, nothing written to the registry. It runs on Windows 7 and later. Direct3D 12 is
-used automatically on Windows 10/11 with a capable GPU; on older systems the app falls back
-to Direct3D 11. All shaders are embedded at build time, so no `d3dcompiler_47.dll`
-installation is required.
+Windows DirectX 启动器一个文件支持全部架构：启动时自动识别 CPU，运行对应的 x64 / x86 / ARM64
+版本，退出后自动清理。不需要安装，也不写注册表。它支持 Windows 7 及更新系统；Windows
+10/11 且显卡支持时会自动使用 Direct3D 12，较老的系统则自动回退到 Direct3D 11。所有着色器
+已在编译期嵌入，无需安装 `d3dcompiler_47.dll` 或其它运行库。
 
-The Windows Vulkan launcher is also a single file for x86 / x64 / ARM64. It targets
-Windows 7 and later, uses Vulkan 1.0 core with `VK_KHR_swapchain`, and requires the
-graphics driver's Vulkan loader.
+Windows Vulkan 版同样是 x86 / x64 / ARM64 单文件启动器，目标系统为 Windows 7 及更新版本，
+使用 Vulkan 1.0 核心与 `VK_KHR_swapchain`，需要显卡驱动提供 Vulkan loader。
 
-The macOS Metal download is a zip containing `TriangleBin.app`, a universal binary for Intel and
-Apple Silicon. If Gatekeeper blocks the first launch, right-click the app and choose **Open**.
+macOS Metal 版下载后解压得到 `TriangleBin.app`，为 Intel 与 Apple Silicon 通用二进制。若首次打开
+被 Gatekeeper 拦截，请右键选择“打开”。
 
-To build the Windows DirectX source yourself instead, see [Building](#building).
+想自己编译 Windows DirectX 版源码的话，见下面的[编译](#编译)一节。
 
-## Relationship to the original
+## 与原项目的关系
 
-This is a port, not a fork in the "small patch" sense. The idea, the controls and the
-measurement are taken from [TriangleBin](https://github.com/Swung0x48/TriangleBin) by
-Swung 0x48 (MIT); the renderer, the build system and the platform support were rewritten
-for DirectX.
+这是一个多平台移植合集，不是打补丁。核心思路、控制项和测量方式来自 Swung 0x48 的
+[TriangleBin](https://github.com/Swung0x48/TriangleBin)（MIT）；Windows DirectX 版源码位于本仓库，
+Windows Vulkan 与 macOS Metal 版以 [Releases](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases) 成品提供。
 
-| | [TriangleBin](https://github.com/Swung0x48/TriangleBin) | TriangleBin DirectX source (this repository) |
+| | [TriangleBin](https://github.com/Swung0x48/TriangleBin) | TriangleBin-MultiPlatform（本仓库） |
 |---|---|---|
-| Graphics API | OpenGL / OpenGL ES | Direct3D 12, falls back to Direct3D 11 |
-| Platforms | Android (APK) + Windows x64 | Windows: x86, x64, ARM64 |
-| Build system | Gradle + Android NDK | CMake + MSVC |
-| GPU selection | — | pick any DXGI adapter at runtime (F2) |
-| Failure diagnostics | — | writes a report on startup failure or crash |
+| 图形 API | OpenGL / OpenGL ES | Windows DirectX 11/12、Windows Vulkan 1.0、macOS Metal |
+| 平台 | Android（APK）+ Windows x64 | Windows：x86 / x64 / ARM64；macOS：Intel / Apple Silicon |
+| 构建 | Gradle + Android NDK | CMake + MSVC（Windows DirectX 源码）；Vulkan / macOS 以 Releases 成品提供 |
+| 选择 GPU | 无 | DirectX 版支持运行时切换任意 DXGI 适配器（F2） |
+| 启动失败诊断 | 无 | 启动失败时生成诊断报告 |
 
-## What this port adds
+## 本移植版新增的内容
 
-**Automatic API selection.** Direct3D 12 is tried first; if device creation fails the
-app falls back to Direct3D 11 and says so in the log. There is no manual override —
-the original only offered automatic selection too.
+**自动选择 API。** 优先创建 Direct3D 12 设备，失败则回退到 Direct3D 11 并在日志中说明。
+与原版一样不提供手动指定。
 
-**Select GPU window (F2).** Every hardware DXGI adapter is listed with its driver
-version, and marked `(D3D11 only)` when it cannot do D3D12. This matters on laptops
-that have both an integrated and a discrete GPU: the adapter that Windows hands out by
-default is not always the one you want to measure. `Auto (best GPU for this app)` keeps
-the default behaviour. Switching adapters recreates the device, so the UI debounces
-rapid clicks into a single switch. If the same physical GPU is enumerated more than
-once by a driver or virtual display adapter, the list merges entries by PCI identity
-(VendorId / DeviceId / SubSysId / Revision) and driver version.
+**选择 GPU 窗口（F2）。** 列出所有硬件 DXGI 适配器及其驱动版本，不支持 D3D12 的会标注
+`(D3D11 only)`。这在同时有核显和独显的笔记本上很有用——Windows 默认分配的那块不一定是你
+想测的那块。`Auto (best GPU for this app)` 保持默认行为。切换适配器需要重建设备，因此界面
+对连续点击做了 300 ms 防抖，合并成一次切换。同一块物理显卡被驱动或虚拟显示适配器重复枚举时，
+选择列表会按 PCI 身份（VendorId / DeviceId / SubSysId / Revision）和驱动版本自动合并，只保留一项。
 
-**Diagnostic report.** On a fatal startup error (for example no DirectX 11 capable
-device) or an unhandled exception, the app writes `trianglebin-error-report.txt` next
-to the executable. It contains the OS version and build number, CPU architecture, GPU
-name, driver version, the highest supported DirectX feature level, and the exact error.
-Sending that one file back is enough to diagnose most startup crashes.
+**诊断报告。** 启动遇到致命错误（例如找不到支持 DirectX 11 的设备）或发生未处理异常时，
+程序会在可执行文件旁边生成 `trianglebin-error-report.txt`，内含系统版本与内部版本号、
+CPU 架构、显卡名称、驱动版本、支持的最高 DirectX 特性级别，以及具体错误。排查启动闪退时
+把这个文件发出来就够了。
 
-**Runtime value readout.** The same information the original displayed via
-`glGetString(...)` is now labelled with the DirectX call it came from: `DXGI GetDesc`
-for the adapter, `DXGI CheckInterfaceSupport` for the driver version, and
-`D3D12CreateDevice` / `D3D11CreateDevice` for the device.
+**运行时数值标注。** 原版通过 `glGetString(...)` 显示的几项信息，现在标注了对应的 DirectX
+调用来源：`DXGI GetDesc`（适配器）、`DXGI CheckInterfaceSupport`（驱动版本）、
+`D3D12CreateDevice` / `D3D11CreateDevice`（所用设备）。
 
-**ARM64 support.** The x86, x64 and ARM64 configurations share one source tree. ARM64
-links SDL2 statically (`deps/SDL2/lib/arm64/SDL2-static.lib`) because SDL2's shared
-library cannot be linked for MSVC ARM64; `src/sdl2_atomic_shim.c` supplies the missing
-`_Interlocked*` symbols.
+**ARM64 支持。** x86、x64、ARM64 三个配置共用同一份源码。ARM64 采用静态链接 SDL2
+（`deps/SDL2/lib/arm64/SDL2-static.lib`），因为 MSVC 下无法链接 SDL2 的动态库；
+`src/sdl2_atomic_shim.c` 负责补齐缺失的 `_Interlocked*` 符号。
 
-**Single-file launcher.** `tools/launcher` builds one executable with the x64, x86 and
-ARM64 payloads embedded as resources. It extracts the build matching the host CPU and
-runs it, so a release is a single `.exe` rather than one archive per architecture.
+**单文件启动器。** `tools/launcher` 会把 x64、x86、ARM64 三份程序作为资源嵌入同一个
+可执行文件，运行时释放与当前 CPU 匹配的那一份。发布时因此只需要一个 `.exe`，而不用为每个
+架构单独打包。
 
-**Performance and memory.** Both backends use `D16_UNORM` for the depth buffer, which
-still resolves the 0–200 triangle layers while halving depth-buffer memory. D3D11
-caches one RTV per back buffer instead of creating it every frame, and D3D12 skips
-re-uploading the random vertex buffer when the triangle count has not changed.
+**性能与显存优化。** 两个后端的深度缓冲统一使用 `D16_UNORM`（0–200 层三角形仍有足够精度，
+深度缓冲内存减半）；D3D11 缓存每个后缓冲区的 RTV，避免每帧创建 COM 对象；D3D12 在三角形
+数量不变时跳过随机顶点缓冲的重复上传。
 
-## Controls
+## 界面说明
 
-| Control | Meaning |
+| 控件 | 含义 |
 |---|---|
-| `Rendered/Screen %` | Fragments rendered / screen pixel count, as a percentage. Range 0–500. |
-| `0%` / `100%` | Jump straight to 0% or 100%. |
-| `Tris` | Number of random triangles to draw, 0–200. The two fullscreen triangles are not counted. |
-| `Auto Increment` | Increase `Rendered/Screen %` automatically every frame. |
-| `ppf` | Percent per frame — how much `Rendered/Screen %` grows while Auto Increment is on. Range 0–10. |
-| `Frag Count` | Fragments the GPU actually shaded for the current frame. It should stay at or below the requested target. |
-| `clear color` | Background colour. |
-| `F2` | Open or close the Select GPU window. |
+| `Rendered/Screen %` | 已渲染片段数 / 屏幕像素数，以百分比表示，范围 0–500。 |
+| `0%` / `100%` | 直接跳到 0% 或 100%。 |
+| `Tris` | 随机三角形数量，0–200，不包含两个全屏三角形。 |
+| `Auto Increment` | 每帧自动增加 `Rendered/Screen %`。 |
+| `ppf` | 每帧增量：勾选 Auto Increment 后 `Rendered/Screen %` 每帧增加的数值，范围 0–10。 |
+| `Frag Count` | 本帧 GPU 实际光栅化的片段数，应当不超过目标值。 |
+| `clear color` | 背景色。 |
+| `F2` | 打开 / 关闭选择 GPU 窗口。 |
 
-How to read it: raise `Tris` and watch `Frag Count`. If the count keeps climbing with
-the triangle count, the GPU is shading every covered pixel of every triangle — that is
-IMR behaviour. If it plateaus well below the target, the GPU is binning geometry and
-shading each pixel once per tile — that is TBR behaviour.
+怎么看结果：提高 `Tris`，观察 `Frag Count`。如果它随三角形数量持续上升，说明每个三角形的
+覆盖像素都被着色，这是 IMR 的行为；如果它明显低于目标值并趋于平稳，说明几何被分桶、
+每个像素每 tile 只着色一次，这是 TBR 的行为。
 
-## Building
+## 编译
 
-Requirements:
+环境要求：
 
-- Windows 10 or 11
-- Visual Studio 2022 or newer with the **Desktop development with C++** workload
-- CMake 3.20 or newer (the copy bundled with Visual Studio works)
+- Windows 10 或 11
+- Visual Studio 2022 或更高版本，需勾选 **使用 C++ 的桌面开发** 工作负载
+- CMake 3.20 或更高版本（Visual Studio 自带的即可）
 
-SDL2, Dear ImGui and GLM are vendored under `deps/`, so no package manager is needed.
+SDL2、Dear ImGui、GLM 已放在 `deps/` 下，无需包管理器。
 
 ```bash
 git clone https://github.com/ddYIbb/TriangleBin-MultiPlatform.git
@@ -134,15 +120,12 @@ cmake -S . -B build-x64 -A x64
 cmake --build build-x64 --config Release
 ```
 
-If several Visual Studio versions are installed and CMake picks the wrong one,
-name the generator explicitly with `-G "Visual Studio 17 2022"` (or
-`-G "Visual Studio 18 2026"`).
+如果装了多个版本的 Visual Studio 而 CMake 选错了，可以显式指定生成器：
+`-G "Visual Studio 17 2022"` 或 `-G "Visual Studio 18 2026"`。
 
-The executable lands in `build-x64/demo-dx.exe`. Copy `deps/SDL2/lib/x64/SDL2.dll` next
-to it before running.
+产物为 `build-x64/demo-dx.exe`。运行前需要把 `deps/SDL2/lib/x64/SDL2.dll` 复制到它旁边。
 
-The other architectures use the same commands with a different generator platform and
-output directory:
+其余架构只是换一下生成器平台和输出目录：
 
 ```bash
 cmake -S . -B build-x86 -A Win32
@@ -152,39 +135,36 @@ cmake -S . -B build-arm64 -A ARM64
 cmake --build build-arm64 --config Release
 ```
 
-The ARM64 build links SDL2 statically and therefore needs no `SDL2.dll`.
+ARM64 静态链接 SDL2，因此不需要 `SDL2.dll`。
 
-### Launcher
+### 启动器
 
-`tools/launcher` embeds the three executables and the two needed `SDL2.dll` files
-as resources. Configure it only after all three builds above have produced their
-`demo-dx.exe`, since the resource compiler reads those files at build time:
+`tools/launcher` 会把上面三个可执行文件和两份 `SDL2.dll` 作为资源嵌入。请务必在三个
+架构都编译完成之后再配置它，因为资源编译器在构建时就要读取这些文件：
 
 ```bash
 cmake -S tools/launcher -B tools/launcher/build -A Win32
 cmake --build tools/launcher/build --config Release
 ```
 
-The result is `tools/launcher/build/demo-dx.exe`, a single portable executable.
-It is deliberately built as Win32 so that the one file runs on every Windows
-machine: x86 and x64 natively, ARM64 through the built-in emulation.
+产物是 `tools/launcher/build/demo-dx.exe`，单文件、可直接分发。它刻意按 Win32（x86）
+编译，这样同一个文件能在所有 Windows 机器上运行：x86 和 x64 原生执行，ARM64 走系统内置
+的模拟层。
 
-`launcher.rc.in` is a template — `CMakeLists.txt` fills in the absolute path of
-each payload at configure time and writes `launcher.rc` into the build
-directory. Nothing machine-specific is stored in the repository.
+`launcher.rc.in` 是模板，配置阶段由 `CMakeLists.txt` 把各载荷的绝对路径填进去并生成
+`launcher.rc` 到构建目录，仓库里不保存任何跟机器相关的路径。
 
-## Third-party components
+## 第三方组件
 
-| Component | Version | Licence |
+| 组件 | 版本 | 许可证 |
 |---|---|---|
 | [SDL2](https://github.com/libsdl-org/SDL) | 2.30.11 | zlib |
 | [Dear ImGui](https://github.com/ocornut/imgui) | — | MIT |
 | [GLM](https://github.com/g-truc/glm) | — | MIT |
 
-## Licence
+## 许可协议
 
-MIT — see [LICENSE](LICENSE).
+MIT，详见 [LICENSE](LICENSE)。
 
-Based on [TriangleBin](https://github.com/Swung0x48/TriangleBin) by Swung 0x48,
-licensed under the MIT Licence. The original copyright notice is preserved in
-`LICENSE`.
+本项目基于 Swung 0x48 的 [TriangleBin](https://github.com/Swung0x48/TriangleBin)
+（MIT 许可）修改而来，原作者的版权声明保留在 `LICENSE` 中。
