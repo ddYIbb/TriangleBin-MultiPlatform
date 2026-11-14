@@ -1,8 +1,14 @@
-# TriangleBin-DX
+# TriangleBin-MultiPlatform
 
 English | [中文](README_CN.md)
 
-A Windows port of [TriangleBin](https://github.com/Swung0x48/TriangleBin) to **Direct3D 11 and 12**.
+A multi-platform collection of ports of [TriangleBin](https://github.com/Swung0x48/TriangleBin), the GPU fill-rate and shader-order test:
+
+- **Windows DX** — Direct3D 11 and 12, x86 / x64 / ARM64, Windows 7 and later
+- **Windows Vulkan** — Vulkan 1.0, x86 / x64 / ARM64, Windows 7 and later with a Vulkan-capable driver
+- **macOS** — universal app for Intel (macOS 10.15+) and Apple Silicon (macOS 11.0+)
+
+This repository contains the Windows DirectX source tree and publishes all three builds in [Releases](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases). The rest of this document describes the DirectX port and its build.
 
 It draws a stack of overlapping triangles and counts how many fragments the GPU actually
 shades. That count is what tells you whether your GPU is an **IMR** (immediate-mode
@@ -13,17 +19,29 @@ bins geometry per tile and shades each pixel roughly once).
 
 ## Download
 
-Grab `TriangleBin-DX-v1.0.0.exe` from the [Releases](https://github.com/ddYIbb/TriangleBin-DX/releases)
-page. It is a single file for every architecture: it detects the host CPU, runs the
-matching x64 / x86 / ARM64 build, and cleans up after itself when it exits. No installer,
-nothing written to the registry.
+The latest release is [v1.1.0](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/tag/v1.1.0):
 
-The launcher runs on Windows 7 and later. Direct3D 12 is used automatically on
-Windows 10/11 with a capable GPU; on older systems the app falls back to Direct3D 11.
-All shaders are embedded at build time, so no `d3dcompiler_47.dll` installation is
-required.
+| Platform | Release asset |
+|---|---|
+| Windows DX | [TriangleBin-Windows-DX-v1.1.0.exe](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Windows-DX-v1.1.0.exe) |
+| Windows Vulkan | [TriangleBin-Windows-Vulkan-v1.1.0.exe](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Windows-Vulkan-v1.1.0.exe) |
+| macOS | [TriangleBin-macOS-v1.1.0.zip](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-macOS-v1.1.0.zip) |
 
-To build it yourself instead, see [Building](#building).
+The Windows DX launcher is a single file for every architecture: it detects the host CPU,
+runs the matching x64 / x86 / ARM64 build, and cleans up after itself when it exits. No
+installer, nothing written to the registry. It runs on Windows 7 and later. Direct3D 12 is
+used automatically on Windows 10/11 with a capable GPU; on older systems the app falls back
+to Direct3D 11. All shaders are embedded at build time, so no `d3dcompiler_47.dll`
+installation is required.
+
+The Windows Vulkan launcher is also a single file for x86 / x64 / ARM64. It targets
+Windows 7 and later, uses Vulkan 1.0 core with `VK_KHR_swapchain`, and requires the
+graphics driver's Vulkan loader.
+
+The macOS download is a zip containing `TriangleBin.app`, a universal binary for Intel and
+Apple Silicon. If Gatekeeper blocks the first launch, right-click the app and choose **Open**.
+
+To build the Windows DX source yourself instead, see [Building](#building).
 
 ## Relationship to the original
 
@@ -32,7 +50,7 @@ measurement are taken from [TriangleBin](https://github.com/Swung0x48/TriangleBi
 Swung 0x48 (MIT); the renderer, the build system and the platform support were rewritten
 for DirectX.
 
-| | [TriangleBin](https://github.com/Swung0x48/TriangleBin) | TriangleBin-DX (this repo) |
+| | [TriangleBin](https://github.com/Swung0x48/TriangleBin) | TriangleBin-DX source (this repository) |
 |---|---|---|
 | Graphics API | OpenGL / OpenGL ES | Direct3D 12, falls back to Direct3D 11 |
 | Platforms | Android (APK) + Windows x64 | Windows: x86, x64, ARM64 |
@@ -109,8 +127,8 @@ Requirements:
 SDL2, Dear ImGui and GLM are vendored under `deps/`, so no package manager is needed.
 
 ```bash
-git clone https://github.com/ddYIbb/TriangleBin-DX.git
-cd TriangleBin-DX
+git clone https://github.com/ddYIbb/TriangleBin-MultiPlatform.git
+cd TriangleBin-MultiPlatform
 
 cmake -S . -B build-x64 -A x64
 cmake --build build-x64 --config Release
