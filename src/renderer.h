@@ -6,7 +6,6 @@
 #include <windows.h>
 #include <d3d11.h>
 #include <d3d12.h>
-#include <d3dcompiler.h>
 #include <dxgi1_4.h>
 #include <wrl/client.h>
 
@@ -50,7 +49,19 @@ struct AdapterInfo {
     std::string driverVersion;
     D3D_FEATURE_LEVEL maxFeatureLevel = (D3D_FEATURE_LEVEL)0;
     bool supportsD3D12 = false;
+    // Hardware identity used to merge duplicate DXGI entries that point at the
+    // same physical GPU through different virtual display adapters.
+    unsigned vendorId = 0;
+    unsigned deviceId = 0;
+    unsigned subSysId = 0;
+    unsigned revision = 0;
+    unsigned long long dedicatedVideoMemory = 0;
 };
+
+// Depth-only format used by both backends. D16 keeps depth ordering exact
+// enough for the 0..200-layer scene while halving the depth-buffer footprint
+// compared with D24_UNORM_S8.
+constexpr DXGI_FORMAT kDepthFormat = DXGI_FORMAT_D16_UNORM;
 
 // Handles handed to the ImGui D3D12 backend by the app.
 struct ImguiD3D12Handles {
@@ -108,6 +119,9 @@ protected:
     std::vector<uint16_t> ibDb {0, 1, 2, 1, 2, 3};
     std::vector<uint16_t> ibData;
     std::vector<vtxData> vbDataRandom;
+    // Incremented whenever vbDataRandom is regenerated, so backends can skip
+    // redundant vertex-buffer uploads while still seeing count->0->count changes.
+    int m_randomVersion = 0;
 
     std::random_device rd;
     std::mt19937 gen;
@@ -137,6 +151,8 @@ std::string dxVersionName(D3D_FEATURE_LEVEL fl);
 bool probeHardwareGpu(std::string& name, std::string& dxName,
                       std::string& driverVersion);
 void formatDriverVersion(ULONGLONG v, std::string& out);
-bool compileHLSL(const char* src, const char* entry, const char* target, std::vector<uint8_t>& blob);
+// True when the D3D12 runtime DLL is present. The executable links D3D12 with
+// /DELAYLOAD so it can still start on Windows 7/8, where only D3D11 exists.
+bool isD3D12RuntimeAvailable();
 
 #endif // RENDERER_H

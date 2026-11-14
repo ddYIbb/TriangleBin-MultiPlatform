@@ -3,6 +3,7 @@
 #include "renderer_dx11.h"
 #include "renderer_dx12.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 
@@ -54,6 +55,7 @@ void Renderer::ensureRandomTris(int count) {
         for (auto& vert : vbDataRandom) {
             vert.pos.z = vert.pos.z * 0.5f + 0.5f;
         }
+        ++m_randomVersion;
     }
 }
 
@@ -61,7 +63,7 @@ std::unique_ptr<Renderer> createRenderer(Backend forced, HWND hwnd, int w, int h
                                          int adapterIndex) {
     std::unique_ptr<Renderer> renderer;
 
-    if (forced != Backend::D3D11) {
+    if (forced != Backend::D3D11 && isD3D12RuntimeAvailable()) {
         auto r = std::make_unique<RendererD3D12>();
         if (r->init(hwnd, w, h, adapterIndex)) {
             renderer = std::move(r);
@@ -135,6 +137,11 @@ std::vector<AdapterInfo> enumerateAdapters() {
 
         AdapterInfo info;
         info.index = (int)i;
+        info.vendorId = desc1.VendorId;
+        info.deviceId = desc1.DeviceId;
+        info.subSysId = desc1.SubSysId;
+        info.revision = desc1.Revision;
+        info.dedicatedVideoMemory = (unsigned long long)desc1.DedicatedVideoMemory;
 
         size_t len = 0;
         while (len < 128 && desc1.Description[len] != L'\0') ++len;
@@ -152,8 +159,32 @@ std::vector<AdapterInfo> enumerateAdapters() {
             info.driverVersion = "unknown";
         }
 
+        // Some systems expose the same physical GPU multiple times through
+        // virtual display adapters (each has a different DXGI LUID/index but the
+        // same PCI identity and driver). Keep one entry per physical GPU so the
+        // "Select GPU" list is not cluttered with identical rows. Do this before
+        // creating probe devices: probing a duplicate would create a full D3D12
+        // device just to throw it away, which made startup and GPU switching
+        // unnecessarily slow on systems with several virtual display adapters.
+        const auto duplicate = std::find_if(
+            out.begin(), out.end(),
+            [&](const AdapterInfo& existing) {
+                return existing.vendorId == info.vendorId &&
+                       existing.deviceId == info.deviceId &&
+                       existing.subSysId == info.subSysId &&
+                       existing.revision == info.revision &&
+                       existing.driverVersion == info.driverVersion &&
+                       existing.name == info.name;
+            });
+        if (duplicate != out.end()) {
+            Log(LOG_INFO) << "Merged duplicate DXGI adapter " << i << " \""
+                          << info.name << "\" into adapter " << duplicate->index;
+            continue;
+        }
+
         ComPtr<ID3D12Device> dev12;
-        if (SUCCEEDED(D3D12CreateDevice(adapter1.Get(), D3D_FEATURE_LEVEL_11_0,
+        if (isD3D12RuntimeAvailable() &&
+            SUCCEEDED(D3D12CreateDevice(adapter1.Get(), D3D_FEATURE_LEVEL_11_0,
                                         IID_PPV_ARGS(&dev12)))) {
             D3D12_FEATURE_DATA_FEATURE_LEVELS fld = {};
             fld.NumFeatureLevels = numLevels;
@@ -174,6 +205,7 @@ std::vector<AdapterInfo> enumerateAdapters() {
                 info.maxFeatureLevel = fl;
             }
         }
+
         out.push_back(std::move(info));
     }
     return out;
@@ -317,23 +349,13 @@ void formatDriverVersion(ULONGLONG v, std::string& out) {
     out = buf;
 }
 
-bool compileHLSL(const char* src, const char* entry, const char* target, std::vector<uint8_t>& blob) {
-    using Microsoft::WRL::ComPtr;
-    ComPtr<ID3DBlob> shader;
-    ComPtr<ID3DBlob> err;
-    UINT flags = D3DCOMPILE_OPTIMIZATION_LEVEL3;
-    HRESULT hr = D3DCompile(src, strlen(src), "TriangleBin", nullptr, nullptr,
-                            entry, target, flags, 0, &shader, &err);
-    if (FAILED(hr)) {
-        Log(LOG_ERROR) << "Could not compile shader! Target: " << target
-                       << ", HRESULT: 0x" << std::hex << (unsigned)hr;
-        if (err) {
-            Log(LOG_ERROR) << "Error log: " << (const char*)err->GetBufferPointer();
-        }
-        Log(LOG_ERROR) << "Shader source: " << src;
-        return false;
-    }
-    const uint8_t* begin = (const uint8_t*)shader->GetBufferPointer();
-    blob.assign(begin, begin + shader->GetBufferSize());
-    return true;
+bool isD3D12RuntimeAvailable() {
+    // LoadLibrary, not a static import: D3D12 was introduced in Windows 10.
+    // Keeping this check separate lets the same binary fall back to D3D11 on
+    // Windows 7/8 instead of failing in the loader before main() runs.
+    static const bool available = [] {
+        HMODULE module = LoadLibraryW(L"d3d12.dll");
+        return module != nullptr;
+    }();
+    return available;
 }

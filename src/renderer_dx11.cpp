@@ -1,6 +1,9 @@
 #include "renderer_dx11.h"
+#include "compiled_shaders.h"
 
+#include <algorithm>
 #include <cstring>
+#include <cwchar>
 
 namespace {
 
@@ -89,6 +92,7 @@ bool RendererD3D11::init(HWND hwnd, int w, int h, int adapterIndex) {
         SIZE_T bestVRAM = 0;
         bool bestSoftware = false;
         int bestIndex = -1;
+        std::vector<DXGI_ADAPTER_DESC1> seenAdapters;
 
         for (UINT i = 0; ; ++i) {
             ComPtr<IDXGIAdapter1> adapter1;
@@ -103,8 +107,22 @@ bool RendererD3D11::init(HWND hwnd, int w, int h, int adapterIndex) {
 
             DXGI_ADAPTER_DESC1 desc1 = {};
             bool software = false;
-            if (SUCCEEDED(adapter1->GetDesc1(&desc1))) {
+            bool haveDesc = SUCCEEDED(adapter1->GetDesc1(&desc1));
+            if (haveDesc) {
                 software = (desc1.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) != 0;
+                // Skip duplicate virtual adapters before creating a D3D11 device
+                // for each of them (same physical GPU, different DXGI LUID).
+                const auto duplicate = std::find_if(
+                    seenAdapters.begin(), seenAdapters.end(),
+                    [&](const DXGI_ADAPTER_DESC1& seen) {
+                        return seen.VendorId == desc1.VendorId &&
+                               seen.DeviceId == desc1.DeviceId &&
+                               seen.SubSysId == desc1.SubSysId &&
+                               seen.Revision == desc1.Revision &&
+                               wcscmp(seen.Description, desc1.Description) == 0;
+                    });
+                if (duplicate != seenAdapters.end()) continue;
+                seenAdapters.push_back(desc1);
             } else {
                 ComPtr<IDXGIAdapter> baseAdapter;
                 adapter1.As(&baseAdapter);
@@ -123,6 +141,18 @@ bool RendererD3D11::init(HWND hwnd, int w, int h, int adapterIndex) {
                                    D3D11_CREATE_DEVICE_BGRA_SUPPORT,
                                    featureLevels, numLevels, D3D11_SDK_VERSION,
                                    &dev, &fl, &ctx);
+            if (hr == E_INVALIDARG) {
+                // Windows 7's D3D11 runtime does not know feature levels above
+                // 11_0. Retry with the legacy-compatible list; Windows 10+
+                // still takes the normal path above.
+                static const D3D_FEATURE_LEVEL legacyLevels[] = {
+                    D3D_FEATURE_LEVEL_11_0
+                };
+                hr = D3D11CreateDevice(adapter1.Get(), D3D_DRIVER_TYPE_UNKNOWN, nullptr,
+                                       D3D11_CREATE_DEVICE_BGRA_SUPPORT,
+                                       legacyLevels, 1, D3D11_SDK_VERSION,
+                                       &dev, &fl, &ctx);
+            }
             if (FAILED(hr)) continue;
 
             const bool haveHardware = bestDevice && !bestSoftware;
@@ -190,7 +220,7 @@ bool RendererD3D11::init(HWND hwnd, int w, int h, int adapterIndex) {
 bool RendererD3D11::createSwapChain(HWND hwnd, int w, int h) {
     ComPtr<IDXGIDevice> dxgiDevice;
     ComPtr<IDXGIAdapter> adapter;
-    ComPtr<IDXGIFactory2> factory;
+    ComPtr<IDXGIFactory1> factory;
 
     if (FAILED(m_device.As(&dxgiDevice))) {
         Log(LOG_ERROR) << "D3D11: device does not expose IDXGIDevice";
@@ -212,41 +242,58 @@ bool RendererD3D11::createSwapChain(HWND hwnd, int w, int h) {
         return false;
     }
 
-    DXGI_SWAP_CHAIN_DESC1 sd = {};
-    sd.Width = (UINT)w;
-    sd.Height = (UINT)h;
-    sd.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    sd.SampleDesc.Count = 1;
-    sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    sd.BufferCount = 3;
-    sd.Scaling = DXGI_SCALING_STRETCH;
-    sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-    sd.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+    // IDXGIFactory2/CreateSwapChainForHwnd exists only on Windows 8+. Try it
+    // first (flip model), then fall back to the Windows 7 IDXGIFactory path.
+    ComPtr<IDXGIFactory2> factory2;
+    factory.As(&factory2);
+    HRESULT hr = E_FAIL;
+    if (factory2) {
+        DXGI_SWAP_CHAIN_DESC1 sd = {};
+        sd.Width = (UINT)w;
+        sd.Height = (UINT)h;
+        sd.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        sd.SampleDesc.Count = 1;
+        sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        sd.BufferCount = 3;
+        sd.Scaling = DXGI_SCALING_STRETCH;
+        sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+        sd.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
 
-    HRESULT hr = factory->CreateSwapChainForHwnd(m_device.Get(), hwnd, &sd,
-                                                  nullptr, nullptr, &m_swapChain);
-    if (FAILED(hr)) {
-        // Legacy systems (e.g. Windows 7) do not support flip-model swap
-        // chains; retry with the discard model so the app still runs.
-        Log(LOG_WARN) << "FLIP_DISCARD swap chain failed (0x" << std::hex
-                      << (unsigned)hr << "), retrying with DXGI_SWAP_EFFECT_DISCARD";
-        m_swapChain.Reset();
+        ComPtr<IDXGISwapChain1> swapChain1;
+        hr = factory2->CreateSwapChainForHwnd(m_device.Get(), hwnd, &sd,
+                                              nullptr, nullptr, &swapChain1);
+        if (SUCCEEDED(hr)) {
+            m_swapChain = swapChain1;
+            m_bufferCount = 3;
+            m_flipModel = true;
+        }
+    }
+
+    if (!m_swapChain) {
+        // Legacy path used by Windows 7: IDXGISwapChain with the discard
+        // model. This path also covers Windows 8+ when flip-model creation
+        // fails for driver-specific reasons.
+        DXGI_SWAP_CHAIN_DESC sd = {};
+        sd.BufferDesc.Width = (UINT)w;
+        sd.BufferDesc.Height = (UINT)h;
+        sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
         sd.BufferCount = 2;
+        sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        sd.OutputWindow = hwnd;
+        sd.SampleDesc.Count = 1;
+        sd.Windowed = TRUE;
         sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-        hr = factory->CreateSwapChainForHwnd(m_device.Get(), hwnd, &sd,
-                                             nullptr, nullptr, &m_swapChain);
+        hr = factory->CreateSwapChain(m_device.Get(), &sd, &m_swapChain);
         if (FAILED(hr)) {
-            Log(LOG_ERROR) << "CreateSwapChainForHwnd (D3D11) failed: 0x"
+            Log(LOG_ERROR) << "CreateSwapChain (D3D11) failed: 0x"
                            << std::hex << (unsigned)hr;
             return false;
         }
         m_bufferCount = 2;
         m_flipModel = false;
         Log(LOG_WARN) << "Using legacy DXGI_SWAP_EFFECT_DISCARD swap chain";
-    } else {
-        m_bufferCount = 3;
-        m_flipModel = true;
     }
+
     DXGI_SWAP_CHAIN_DESC dbg = {};
     m_swapChain->GetDesc(&dbg);
     Log(LOG_INFO) << "D3D11 swap chain: BufferCount=" << dbg.BufferCount
@@ -254,18 +301,38 @@ bool RendererD3D11::createSwapChain(HWND hwnd, int w, int h) {
                   << " Width=" << dbg.BufferDesc.Width
                   << " Height=" << dbg.BufferDesc.Height;
     factory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
-    m_swapChain.As(&m_swapChain3);
+    if (m_flipModel) m_swapChain.As(&m_swapChain3);
     return true;
 }
 
 bool RendererD3D11::createRenderTargets(int w, int h) {
-    // For flip-model swap chains the runtime only guarantees access to the
-    // current back buffer, so the RTV for the current frame is created in
-    // draw(). Here we only validate that buffer 0 is reachable.
-    ComPtr<ID3D11Texture2D> back;
-    if (FAILED(m_swapChain->GetBuffer(0, IID_PPV_ARGS(&back)))) {
-        Log(LOG_ERROR) << "D3D11: GetBuffer(0) failed";
-        return false;
+    // Cache one RTV per back buffer. Creating GetBuffer/CreateRenderTargetView
+    // every frame was a measurable COM/allocation cost in the hot path. The
+    // discard-model chain only has one reachable back buffer (index 0).
+    for (auto& rtv : m_rtv) rtv.Reset();
+    const UINT rtvCount = m_flipModel ? m_bufferCount : 1;
+    for (UINT i = 0; i < rtvCount; ++i) {
+        ComPtr<ID3D11Texture2D> back;
+        HRESULT hr = m_swapChain->GetBuffer(i, IID_PPV_ARGS(&back));
+        if (FAILED(hr)) {
+            // Some drivers only expose non-current flip-model back buffers
+            // after the first Present. Defer those RTVs to draw(), where the
+            // current buffer is guaranteed to be valid.
+            if (i == 0) {
+                Log(LOG_ERROR) << "D3D11: GetBuffer(" << i << ") failed: 0x"
+                               << std::hex << (unsigned)hr;
+                return false;
+            }
+            Log(LOG_DEBUG) << "D3D11: GetBuffer(" << i << ") deferred: 0x"
+                           << std::hex << (unsigned)hr;
+            break;
+        }
+        hr = m_device->CreateRenderTargetView(back.Get(), nullptr, &m_rtv[i]);
+        if (FAILED(hr)) {
+            Log(LOG_ERROR) << "D3D11: CreateRenderTargetView failed for buffer "
+                           << i << ": 0x" << std::hex << (unsigned)hr;
+            return false;
+        }
     }
 
     D3D11_TEXTURE2D_DESC dd = {};
@@ -273,7 +340,7 @@ bool RendererD3D11::createRenderTargets(int w, int h) {
     dd.Height = (UINT)h;
     dd.MipLevels = 1;
     dd.ArraySize = 1;
-    dd.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    dd.Format = kDepthFormat;
     dd.SampleDesc.Count = 1;
     dd.Usage = D3D11_USAGE_DEFAULT;
     dd.BindFlags = D3D11_BIND_DEPTH_STENCIL;
@@ -289,18 +356,14 @@ bool RendererD3D11::createRenderTargets(int w, int h) {
 }
 
 bool RendererD3D11::createPipeline() {
-    std::vector<uint8_t> vsBlob, psBlob;
-    if (!compileHLSL(kVtxShader, "VSMain", "vs_5_0", vsBlob)) return false;
-    if (!compileHLSL(kFragShader, "PSMain", "ps_5_0", psBlob)) return false;
-
-    if (FAILED(m_device->CreateVertexShader(vsBlob.data(), vsBlob.size(), nullptr, &m_vs))) return false;
-    if (FAILED(m_device->CreatePixelShader(psBlob.data(), psBlob.size(), nullptr, &m_ps))) return false;
+    if (FAILED(m_device->CreateVertexShader(kQuadVS, kQuadVSSize, nullptr, &m_vs))) return false;
+    if (FAILED(m_device->CreatePixelShader(kQuadPS, kQuadPSSize, nullptr, &m_ps))) return false;
 
     D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }
     };
     if (FAILED(m_device->CreateInputLayout(layoutDesc, 1,
-                                           vsBlob.data(), vsBlob.size(), &m_il))) return false;
+                                           kQuadVS, kQuadVSSize, &m_il))) return false;
 
     D3D11_BLEND_DESC bd = {};
     bd.RenderTarget[0].BlendEnable = TRUE;
@@ -397,31 +460,31 @@ void RendererD3D11::draw() {
     ensureQuadIndexData();
 
     UINT bb = m_swapChain3 ? m_swapChain3->GetCurrentBackBufferIndex() : 0;
-
-    // Fetch the current back buffer and (re)create its RTV every frame.
-    // Discard-model chains rotate the buffer underneath index 0; flip-model
-    // chains on some runtimes only expose the current buffer.
-    UINT target = m_flipModel ? bb : 0;
-    ComPtr<ID3D11Texture2D> back;
-    HRESULT getHr = m_swapChain->GetBuffer(target, IID_PPV_ARGS(&back));
-    if (SUCCEEDED(getHr) && back) {
-        m_rtv[target].Reset();
-        if (FAILED(m_device->CreateRenderTargetView(back.Get(), nullptr, &m_rtv[target]))) {
-            Log(LOG_ERROR) << "D3D11: CreateRenderTargetView failed for frame " << target;
+    const UINT target = m_flipModel ? bb : 0;
+    if (!m_rtv[target]) {
+        ComPtr<ID3D11Texture2D> back;
+        HRESULT hr = m_swapChain->GetBuffer(target, IID_PPV_ARGS(&back));
+        if (FAILED(hr)) {
+            Log(LOG_ERROR) << "D3D11: GetBuffer(" << target << ") failed: 0x"
+                           << std::hex << (unsigned)hr;
+            return;
         }
-    } else {
-        Log(LOG_ERROR) << "D3D11: GetBuffer(" << target << ") failed: 0x"
-                       << std::hex << (unsigned)getHr;
+        hr = m_device->CreateRenderTargetView(back.Get(), nullptr, &m_rtv[target]);
+        if (FAILED(hr)) {
+            Log(LOG_ERROR) << "D3D11: CreateRenderTargetView failed for buffer "
+                           << target << ": 0x" << std::hex << (unsigned)hr;
+            return;
+        }
     }
+    ID3D11RenderTargetView* rtv = m_rtv[target].Get();
 
     D3D11_VIEWPORT vp = {0.f, 0.f, (float)m_info.width, (float)m_info.height, 0.f, 1.f};
     m_ctx->RSSetViewports(1, &vp);
     m_ctx->RSSetState(m_rs.Get());
-    m_ctx->OMSetRenderTargets(1, m_rtv[bb].GetAddressOf(), m_dsv.Get());
     m_ctx->OMSetBlendState(m_blend.Get(), nullptr, 0xFFFFFFFF);
     m_ctx->OMSetDepthStencilState(m_dsState.Get(), 0);
 
-    m_ctx->ClearRenderTargetView(m_rtv[bb].Get(), clearColor);
+    m_ctx->ClearRenderTargetView(rtv, clearColor);
     m_ctx->ClearDepthStencilView(m_dsv.Get(), D3D11_CLEAR_DEPTH, 1.f, 0);
 
     // Per-frame parameters.
@@ -435,16 +498,16 @@ void RendererD3D11::draw() {
     // are the same slots the pixel shader sees).
     ID3D11UnorderedAccessView* uav = m_counterUAV.Get();
     m_ctx->OMSetRenderTargetsAndUnorderedAccessViews(
-        1, m_rtv[bb].GetAddressOf(), m_dsv.Get(), 1, 1, &uav, nullptr);
+        1, &rtv, m_dsv.Get(), 1, 1, &uav, nullptr);
 
     // Reset the fragment counter (must be unbound while updating).
     ID3D11UnorderedAccessView* uavNull[1] = { nullptr };
     m_ctx->OMSetRenderTargetsAndUnorderedAccessViews(
-        1, m_rtv[bb].GetAddressOf(), m_dsv.Get(), 1, 1, uavNull, nullptr);
+        1, &rtv, m_dsv.Get(), 1, 1, uavNull, nullptr);
     uint32_t zero = 0;
     m_ctx->UpdateSubresource(m_counter.Get(), 0, nullptr, &zero, 0, 0);
     m_ctx->OMSetRenderTargetsAndUnorderedAccessViews(
-        1, m_rtv[bb].GetAddressOf(), m_dsv.Get(), 1, 1, &uav, nullptr);
+        1, &rtv, m_dsv.Get(), 1, 1, &uav, nullptr);
 
     m_ctx->IASetInputLayout(m_il.Get());
     m_ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -472,20 +535,26 @@ void RendererD3D11::drawRandomTris(int count) {
         m_vbRandom.Reset();
         D3D11_BUFFER_DESC bd = {};
         bd.ByteWidth = (UINT)maxBytes;
-        bd.Usage = D3D11_USAGE_DYNAMIC;
+        bd.Usage = D3D11_USAGE_DEFAULT;
         bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-        bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
         if (FAILED(m_device->CreateBuffer(&bd, nullptr, &m_vbRandom))) return;
         m_vbRandomBytes = maxBytes;
+        m_randomUploadedVersion = -1;
     }
 
-    D3D11_MAPPED_SUBRESOURCE mapped = {};
-    if (FAILED(m_ctx->Map(m_vbRandom.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
-        Log(LOG_ERROR) << "D3D11: Map random-tris buffer failed";
-        return;
+    // Random triangles are regenerated only when the Tris count changes, so
+    // upload them only when the generator has advanced instead of copying every
+    // frame (count -> 0 -> count also regenerates, which a plain count check
+    // would miss).
+    if (m_randomUploadedVersion != m_randomVersion) {
+        D3D11_BOX box = {};
+        box.left = 0;
+        box.right = (UINT)bytes;
+        box.bottom = 1;
+        box.back = 1;
+        m_ctx->UpdateSubresource(m_vbRandom.Get(), 0, &box, vbDataRandom.data(), 0, 0);
+        m_randomUploadedVersion = m_randomVersion;
     }
-    memcpy(mapped.pData, vbDataRandom.data(), bytes);
-    m_ctx->Unmap(m_vbRandom.Get(), 0);
 
     UINT stride = (UINT)sizeof(vtxData);
     UINT offset = 0;

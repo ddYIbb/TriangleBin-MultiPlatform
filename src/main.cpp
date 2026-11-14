@@ -298,7 +298,7 @@ static bool initImguiD3D(Renderer* r) {
         initInfo.CommandQueue = handles.queue;
         initInfo.NumFramesInFlight = handles.numFrames;
         initInfo.RTVFormat = handles.rtvFormat;
-        initInfo.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+        initInfo.DSVFormat = kDepthFormat;
         initInfo.SrvDescriptorHeap = handles.srvHeap;
         initInfo.SrvDescriptorAllocFn = SrvDescriptorAlloc;
         initInfo.SrvDescriptorFreeFn = SrvDescriptorFree;
@@ -432,6 +432,7 @@ int main(int argc, char** argv) {
         float frag_speed = 1;
         int tri_count = 200;
         bool auto_increment = false;
+        bool text_input_active = false;
 
         // "Select GPU" window (independent from Controls). Auto-opened at
         // startup; toggled again with F2 so the Controls layout stays identical
@@ -492,10 +493,13 @@ int main(int argc, char** argv) {
                     }
                 }
             }
-            if (io.WantTextInput) {
-                SDL_StartTextInput();
-            } else {
-                SDL_StopTextInput();
+            if (io.WantTextInput != text_input_active) {
+                text_input_active = io.WantTextInput;
+                if (text_input_active) {
+                    SDL_StartTextInput();
+                } else {
+                    SDL_StopTextInput();
+                }
             }
             // Exit immediately on SDL_QUIT instead of rendering/presenting one
             // more frame (presenting on a closing window can block).

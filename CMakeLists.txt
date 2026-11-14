@@ -3,9 +3,11 @@ project(TriangleBinDX LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# Keep the runtime self-contained and usable on older Windows versions too.
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 if(MSVC)
-    add_compile_options(/W3 /permissive- /utf-8)
+    add_compile_options(/W3 /permissive- /utf-8 /D_WIN32_WINNT=0x0601 /DWINVER=0x0601)
 endif()
 
 set(TB_SOURCES
@@ -43,7 +45,7 @@ add_executable(demo-dx ${TB_SOURCES})
 
 set_target_properties(demo-dx PROPERTIES
     WIN32_EXECUTABLE TRUE
-    LINK_OPTIONS "/ENTRY:mainCRTStartup"
+    LINK_OPTIONS "/ENTRY:mainCRTStartup;/SUBSYSTEM:WINDOWS,6.01;/DELAYLOAD:d3d12.dll"
 )
 
 target_include_directories(demo-dx PRIVATE
@@ -62,7 +64,7 @@ if(SDL2_ARCH STREQUAL "arm64")
         d3d11
         d3d12
         dxgi
-        d3dcompiler
+        delayimp
         "${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/arm64/SDL2-static.lib"
         user32 winmm imm32 version shell32 ole32 oleaut32 setupapi dinput8
     )
@@ -71,7 +73,7 @@ else()
         d3d11
         d3d12
         dxgi
-        d3dcompiler
+        delayimp
         "${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2/lib/${SDL2_ARCH}/SDL2.lib"
         user32
     )

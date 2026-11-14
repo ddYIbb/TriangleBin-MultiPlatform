@@ -18,6 +18,11 @@ page. It is a single file for every architecture: it detects the host CPU, runs 
 matching x64 / x86 / ARM64 build, and cleans up after itself when it exits. No installer,
 nothing written to the registry.
 
+The launcher runs on Windows 7 and later. Direct3D 12 is used automatically on
+Windows 10/11 with a capable GPU; on older systems the app falls back to Direct3D 11.
+All shaders are embedded at build time, so no `d3dcompiler_47.dll` installation is
+required.
+
 To build it yourself instead, see [Building](#building).
 
 ## Relationship to the original
@@ -46,7 +51,9 @@ version, and marked `(D3D11 only)` when it cannot do D3D12. This matters on lapt
 that have both an integrated and a discrete GPU: the adapter that Windows hands out by
 default is not always the one you want to measure. `Auto (best GPU for this app)` keeps
 the default behaviour. Switching adapters recreates the device, so the UI debounces
-rapid clicks into a single switch.
+rapid clicks into a single switch. If the same physical GPU is enumerated more than
+once by a driver or virtual display adapter, the list merges entries by PCI identity
+(VendorId / DeviceId / SubSysId / Revision) and driver version.
 
 **Diagnostic report.** On a fatal startup error (for example no DirectX 11 capable
 device) or an unhandled exception, the app writes `trianglebin-error-report.txt` next
@@ -67,6 +74,11 @@ library cannot be linked for MSVC ARM64; `src/sdl2_atomic_shim.c` supplies the m
 **Single-file launcher.** `tools/launcher` builds one executable with the x64, x86 and
 ARM64 payloads embedded as resources. It extracts the build matching the host CPU and
 runs it, so a release is a single `.exe` rather than one archive per architecture.
+
+**Performance and memory.** Both backends use `D16_UNORM` for the depth buffer, which
+still resolves the 0–200 triangle layers while halving depth-buffer memory. D3D11
+caches one RTV per back buffer instead of creating it every frame, and D3D12 skips
+re-uploading the random vertex buffer when the triangle count has not changed.
 
 ## Controls
 

@@ -96,7 +96,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             return 1;
         }
     }
-
     // Run from the launcher directory so imgui.ini / diagnostic reports land
     // next to the launcher (portable behaviour).
     SetCurrentDirectoryW(launcherDir.c_str());

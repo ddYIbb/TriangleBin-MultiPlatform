@@ -59,6 +59,7 @@ private:
     ComPtr<ID3D12Resource> m_vbRandom[3];
     void* m_vbRandomMapped[3] = {};
     size_t m_vbRandomBytes = 0;
+    int m_randomUploadedVersion[3] = {-1, -1, -1};
     D3D12_GPU_VIRTUAL_ADDRESS m_cbVSAddr = 0;
 
     ComPtr<ID3D12Resource> m_cbPS[3];

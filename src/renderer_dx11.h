@@ -34,7 +34,7 @@ private:
 
     ComPtr<ID3D11Device> m_device;
     ComPtr<ID3D11DeviceContext> m_ctx;
-    ComPtr<IDXGISwapChain1> m_swapChain;
+    ComPtr<IDXGISwapChain> m_swapChain;
     ComPtr<IDXGISwapChain3> m_swapChain3;
     DXGI_ADAPTER_DESC m_adapterDesc = {};
 
@@ -60,6 +60,7 @@ private:
     D3D_FEATURE_LEVEL m_fl = D3D_FEATURE_LEVEL_11_0;
     RendererInfo m_info;
     size_t m_vbRandomBytes = 0;
+    int m_randomUploadedVersion = -1;
     bool m_quadUploaded = false;
     UINT m_bufferCount = 3;
     bool m_flipModel = true;

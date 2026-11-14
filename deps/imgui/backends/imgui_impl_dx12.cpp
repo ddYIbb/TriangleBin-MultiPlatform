@@ -47,14 +47,11 @@
 #include "imgui.h"
 #ifndef IMGUI_DISABLE
 #include "imgui_impl_dx12.h"
+#include "imgui_shaders_dx.h"
 
 // DirectX
 #include <d3d12.h>
 #include <dxgi1_4.h>
-#include <d3dcompiler.h>
-#ifdef _MSC_VER
-#pragma comment(lib, "d3dcompiler") // Automatically link with d3dcompiler.lib as we are using D3DCompile() below.
-#endif
 
 // DirectX12 data
 struct ImGui_ImplDX12_RenderBuffers;
@@ -575,78 +572,18 @@ bool    ImGui_ImplDX12_CreateDeviceObjects()
     psoDesc.SampleDesc.Count = 1;
     psoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
-    ID3DBlob* vertexShaderBlob;
-    ID3DBlob* pixelShaderBlob;
+    // Create the shaders from precompiled bytecode, avoiding d3dcompiler_XX.dll.
+    psoDesc.VS = { g_imgui_dx12_vs, sizeof(g_imgui_dx12_vs) };
+    psoDesc.PS = { kImguiDX12PS, sizeof(kImguiDX12PS) };
 
-    // Create the vertex shader
+    // Create the input layout
+    static D3D12_INPUT_ELEMENT_DESC local_layout[] =
     {
-        static const char* vertexShader =
-            "cbuffer vertexBuffer : register(b0) \
-            {\
-              float4x4 ProjectionMatrix; \
-            };\
-            struct VS_INPUT\
-            {\
-              float2 pos : POSITION;\
-              float4 col : COLOR0;\
-              float2 uv  : TEXCOORD0;\
-            };\
-            \
-            struct PS_INPUT\
-            {\
-              float4 pos : SV_POSITION;\
-              float4 col : COLOR0;\
-              float2 uv  : TEXCOORD0;\
-            };\
-            \
-            PS_INPUT main(VS_INPUT input)\
-            {\
-              PS_INPUT output;\
-              output.pos = mul( ProjectionMatrix, float4(input.pos.xy, 0.f, 1.f));\
-              output.col = input.col;\
-              output.uv  = input.uv;\
-              return output;\
-            }";
-
-        if (FAILED(D3DCompile(vertexShader, strlen(vertexShader), nullptr, nullptr, nullptr, "main", "vs_5_0", 0, 0, &vertexShaderBlob, nullptr)))
-            return false; // NB: Pass ID3DBlob* pErrorBlob to D3DCompile() to get error showing in (const char*)pErrorBlob->GetBufferPointer(). Make sure to Release() the blob!
-        psoDesc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
-
-        // Create the input layout
-        static D3D12_INPUT_ELEMENT_DESC local_layout[] =
-        {
-            { "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT,   0, (UINT)offsetof(ImDrawVert, pos), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-            { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,   0, (UINT)offsetof(ImDrawVert, uv),  D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-            { "COLOR",    0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, (UINT)offsetof(ImDrawVert, col), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        };
-        psoDesc.InputLayout = { local_layout, 3 };
-    }
-
-    // Create the pixel shader
-    {
-        static const char* pixelShader =
-            "struct PS_INPUT\
-            {\
-              float4 pos : SV_POSITION;\
-              float4 col : COLOR0;\
-              float2 uv  : TEXCOORD0;\
-            };\
-            SamplerState sampler0 : register(s0);\
-            Texture2D texture0 : register(t0);\
-            \
-            float4 main(PS_INPUT input) : SV_Target\
-            {\
-              float4 out_col = input.col * texture0.Sample(sampler0, input.uv); \
-              return out_col; \
-            }";
-
-        if (FAILED(D3DCompile(pixelShader, strlen(pixelShader), nullptr, nullptr, nullptr, "main", "ps_5_0", 0, 0, &pixelShaderBlob, nullptr)))
-        {
-            vertexShaderBlob->Release();
-            return false; // NB: Pass ID3DBlob* pErrorBlob to D3DCompile() to get error showing in (const char*)pErrorBlob->GetBufferPointer(). Make sure to Release() the blob!
-        }
-        psoDesc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
-    }
+        { "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT,   0, (UINT)offsetof(ImDrawVert, pos), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,   0, (UINT)offsetof(ImDrawVert, uv),  D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "COLOR",    0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, (UINT)offsetof(ImDrawVert, col), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+    };
+    psoDesc.InputLayout = { local_layout, 3 };
 
     // Create the blending setup
     {
@@ -691,8 +628,6 @@ bool    ImGui_ImplDX12_CreateDeviceObjects()
     }
 
     HRESULT result_pipeline_state = bd->pd3dDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&bd->pPipelineState));
-    vertexShaderBlob->Release();
-    pixelShaderBlob->Release();
     if (result_pipeline_state != S_OK)
         return false;
 

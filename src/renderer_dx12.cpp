@@ -1,6 +1,9 @@
 #include "renderer_dx12.h"
+#include "compiled_shaders.h"
 
+#include <algorithm>
 #include <cstring>
+#include <cwchar>
 
 namespace {
 
@@ -77,6 +80,11 @@ RendererD3D12::~RendererD3D12() {
 }
 
 bool RendererD3D12::init(HWND hwnd, int w, int h, int adapterIndex) {
+    if (!isD3D12RuntimeAvailable()) {
+        Log(LOG_WARN) << "Direct3D 12 runtime is not available; using Direct3D 11 fallback";
+        return false;
+    }
+
     ComPtr<IDXGIFactory1> factory1;
     ComPtr<IDXGIFactory4> factory;
     if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&factory1)))) {
@@ -111,17 +119,20 @@ bool RendererD3D12::init(HWND hwnd, int w, int h, int adapterIndex) {
             Log(LOG_WARN) << "Requested adapter is a software adapter";
             return false;
         }
-        ComPtr<ID3D12Device> probe;
+        // Create the real device here and reuse it for the feature-level query
+        // below. Previously the explicit-GPU path created a probe device and then
+        // immediately created a second device for rendering; on a GPU switch that
+        // doubled the expensive D3D12CreateDevice work.
         if (FAILED(D3D12CreateDevice(a.Get(), D3D_FEATURE_LEVEL_11_0,
-                                     IID_PPV_ARGS(&probe)))) {
+                                     IID_PPV_ARGS(&m_device)))) {
             Log(LOG_WARN) << "Requested adapter does not support Direct3D 12";
             return false;
         }
         D3D12_FEATURE_DATA_FEATURE_LEVELS flData = {};
         flData.NumFeatureLevels = numLevels;
         flData.pFeatureLevelsRequested = kLevels;
-        if (SUCCEEDED(probe->CheckFeatureSupport(D3D12_FEATURE_FEATURE_LEVELS,
-                                                 &flData, sizeof(flData)))) {
+        if (SUCCEEDED(m_device->CheckFeatureSupport(D3D12_FEATURE_FEATURE_LEVELS,
+                                                    &flData, sizeof(flData)))) {
             fl = flData.MaxSupportedFeatureLevel;
         }
         adapter = a;
@@ -134,6 +145,7 @@ bool RendererD3D12::init(HWND hwnd, int w, int h, int adapterIndex) {
         D3D_FEATURE_LEVEL bestFL = (D3D_FEATURE_LEVEL)0;
         SIZE_T bestVRAM = 0;
         int bestIndex = -1;
+        std::vector<DXGI_ADAPTER_DESC1> seenAdapters;
 
         for (UINT i = 0; ; ++i) {
             ComPtr<IDXGIAdapter1> candidate;
@@ -142,8 +154,25 @@ bool RendererD3D12::init(HWND hwnd, int w, int h, int adapterIndex) {
             if (FAILED(hr)) continue;
 
             DXGI_ADAPTER_DESC1 desc1 = {};
-            candidate->GetDesc1(&desc1);
-            const bool software = (desc1.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) != 0;
+            const bool haveDesc = SUCCEEDED(candidate->GetDesc1(&desc1));
+            const bool software = haveDesc && (desc1.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) != 0;
+
+            // Skip duplicate virtual adapters before doing the expensive
+            // D3D12CreateDevice probe. Otherwise the same physical GPU can be
+            // probed three times and every GPU switch pays that cost again.
+            if (haveDesc) {
+                const auto duplicate = std::find_if(
+                    seenAdapters.begin(), seenAdapters.end(),
+                    [&](const DXGI_ADAPTER_DESC1& seen) {
+                        return seen.VendorId == desc1.VendorId &&
+                               seen.DeviceId == desc1.DeviceId &&
+                               seen.SubSysId == desc1.SubSysId &&
+                               seen.Revision == desc1.Revision &&
+                               wcscmp(seen.Description, desc1.Description) == 0;
+                    });
+                if (duplicate != seenAdapters.end()) continue;
+                seenAdapters.push_back(desc1);
+            }
 
             ComPtr<ID3D12Device> probe;
             if (FAILED(D3D12CreateDevice(candidate.Get(), D3D_FEATURE_LEVEL_11_0,
@@ -304,13 +333,13 @@ bool RendererD3D12::createDepth(int w, int h) {
     dd.DepthOrArraySize = 1;
     dd.MipLevels = 1;
     dd.SampleDesc = {1, 0};
-    dd.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    dd.Format = kDepthFormat;
     dd.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
     D3D12_HEAP_PROPERTIES hp = {};
     hp.Type = D3D12_HEAP_TYPE_DEFAULT;
     D3D12_CLEAR_VALUE cv = {};
-    cv.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    cv.Format = kDepthFormat;
     cv.DepthStencil.Depth = 1.f;
 
     HRESULT hr = m_device->CreateCommittedResource(
@@ -319,7 +348,7 @@ bool RendererD3D12::createDepth(int w, int h) {
     if (FAILED(hr)) return false;
 
     D3D12_DEPTH_STENCIL_VIEW_DESC dsv = {};
-    dsv.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    dsv.Format = kDepthFormat;
     dsv.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
     dsv.Flags = D3D12_DSV_FLAG_NONE;
     m_device->CreateDepthStencilView(m_depth.Get(), &dsv,
@@ -328,10 +357,6 @@ bool RendererD3D12::createDepth(int w, int h) {
 }
 
 bool RendererD3D12::createRootSignatureAndPSO() {
-    std::vector<uint8_t> vsBlob, psBlob;
-    if (!compileHLSL(kVtxShader, "VSMain", "vs_5_0", vsBlob)) return false;
-    if (!compileHLSL(kFragShader, "PSMain", "ps_5_0", psBlob)) return false;
-
     D3D12_DESCRIPTOR_RANGE uavRange = {};
     uavRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
     uavRange.NumDescriptors = 1;
@@ -377,8 +402,8 @@ bool RendererD3D12::createRootSignatureAndPSO() {
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC pso = {};
     pso.pRootSignature = m_rootSig.Get();
-    pso.VS = { vsBlob.data(), vsBlob.size() };
-    pso.PS = { psBlob.data(), psBlob.size() };
+    pso.VS = { kQuadVS, kQuadVSSize };
+    pso.PS = { kQuadPS, kQuadPSSize };
     pso.BlendState.RenderTarget[0].BlendEnable = TRUE;
     pso.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
     pso.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
@@ -399,7 +424,7 @@ bool RendererD3D12::createRootSignatureAndPSO() {
     pso.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
     pso.NumRenderTargets = 1;
     pso.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-    pso.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    pso.DSVFormat = kDepthFormat;
     pso.SampleDesc = {1, 0};
 
     HRESULT psoHr = m_device->CreateGraphicsPipelineState(&pso, IID_PPV_ARGS(&m_pso));
@@ -639,7 +664,10 @@ void RendererD3D12::drawRandomTris(int count) {
     }
 
     UINT bb = m_frameIndex;
-    memcpy(m_vbRandomMapped[bb], vbDataRandom.data(), bytes);
+    if (m_randomUploadedVersion[bb] != m_randomVersion) {
+        memcpy(m_vbRandomMapped[bb], vbDataRandom.data(), bytes);
+        m_randomUploadedVersion[bb] = m_randomVersion;
+    }
 
     D3D12_VERTEX_BUFFER_VIEW vbv = {};
     vbv.BufferLocation = m_vbRandom[bb]->GetGPUVirtualAddress();
