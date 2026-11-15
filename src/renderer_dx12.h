@@ -63,12 +63,11 @@ private:
     D3D12_GPU_VIRTUAL_ADDRESS m_cbVSAddr = 0;
 
     ComPtr<ID3D12Resource> m_cbPS[3];
-    ComPtr<ID3D12Resource> m_zeroSrc[3];
     void* m_cbPSMapped[3] = {};
-    void* m_zeroMapped[3] = {};
     D3D12_GPU_VIRTUAL_ADDRESS m_cbPSAddr[3] = {};
 
     ComPtr<ID3D12Resource> m_counter;
+    D3D12_CPU_DESCRIPTOR_HANDLE m_counterUavCpu = {};
     D3D12_GPU_DESCRIPTOR_HANDLE m_counterUavGpu = {};
     bool m_counterInitialized = false;
 

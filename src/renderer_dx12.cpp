@@ -70,7 +70,17 @@ RendererD3D12::~RendererD3D12() {
     // pacing to the display refresh rate is done on the CPU. This means there
     // are never flip-model vsync presents pending here, so releasing the
     // swapchain/device during shutdown does not trigger an NVIDIA TDR.
+    //
+    // GPU switches tear this object down right after a Present(0,0): if the
+    // driver is momentarily busy (adapter bring-up on the new device) the
+    // bounded waitForFrame may time out while GPU work is still in flight.
+    // Give each fence one extra bounded grace pass before releasing the
+    // swapchain/device; destroying live resources on a stalled GPU is what
+    // makes the occasional switch hang unrecoverable.
     flush();
+    for (int i = 0; i < 3; ++i) {
+        waitForFrame((UINT)i);
+    }
     for (int i = 0; i < 3; ++i) {
         if (m_fenceEvents[i]) {
             CloseHandle(m_fenceEvents[i]);
@@ -493,10 +503,8 @@ bool RendererD3D12::createUploadResources() {
                                 &m_cbPSMapped[i], &m_cbPS[i])) return false;
         memset(m_cbPSMapped[i], 0, sizeof(FrameCB));
         m_cbPSAddr[i] = m_cbPS[i]->GetGPUVirtualAddress();
-
-        if (!createUploadBuffer(m_device.Get(), sizeof(uint32_t),
-                                &m_zeroMapped[i], &m_zeroSrc[i])) return false;
-        *((uint32_t*)m_zeroMapped[i]) = 0;
+        // The per-frame counter upload buffer is gone: the counter is now
+        // cleared on the GPU with ClearUnorderedAccessViewUint.
     }
     return true;
 }
@@ -523,8 +531,8 @@ bool RendererD3D12::createCounter() {
     uav.Buffer.FirstElement = 0;
     uav.Buffer.NumElements = 1; // 4-byte raw buffer = 1 DWORD
     uav.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
-    m_device->CreateUnorderedAccessView(m_counter.Get(), nullptr, &uav,
-                                        m_uavHeap->GetCPUDescriptorHandleForHeapStart());
+    m_counterUavCpu = m_uavHeap->GetCPUDescriptorHandleForHeapStart();
+    m_device->CreateUnorderedAccessView(m_counter.Get(), nullptr, &uav, m_counterUavCpu);
     m_counterUavGpu = m_uavHeap->GetGPUDescriptorHandleForHeapStart();
     m_counterInitialized = false;
     return true;
@@ -611,23 +619,24 @@ void RendererD3D12::beginFrame() {
     m_list->SetGraphicsRootConstantBufferView(1, m_cbPSAddr[bb]);
     m_list->SetGraphicsRootDescriptorTable(2, m_counterUavGpu);
 
-    // Reset the fragment counter before drawing.
-    *((uint32_t*)m_zeroMapped[bb]) = 0;
-    D3D12_RESOURCE_BARRIER cb1 = {};
-    cb1.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    cb1.Transition.pResource = m_counter.Get();
-    cb1.Transition.StateBefore = m_counterInitialized
-        ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-        : D3D12_RESOURCE_STATE_COMMON;
-    cb1.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
-    cb1.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    m_list->ResourceBarrier(1, &cb1);
-    m_list->CopyBufferRegion(m_counter.Get(), 0, m_zeroSrc[bb].Get(), 0, 4);
-    D3D12_RESOURCE_BARRIER cb2 = cb1;
-    cb2.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-    cb2.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-    m_list->ResourceBarrier(1, &cb2);
-    m_counterInitialized = true;
+    // Reset the fragment counter before drawing. The counter is cleared in
+    // place with the GPU-side UAV clear while it stays in the UNORDERED_ACCESS
+    // state, which replaces the old per-frame copy: two resource barriers plus
+    // a 4-byte CopyBufferRegion from an upload buffer. Only the very first
+    // frame still needs the one-time COMMON -> UNORDERED_ACCESS transition.
+    if (!m_counterInitialized) {
+        D3D12_RESOURCE_BARRIER cb0 = {};
+        cb0.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        cb0.Transition.pResource = m_counter.Get();
+        cb0.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+        cb0.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        cb0.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        m_list->ResourceBarrier(1, &cb0);
+        m_counterInitialized = true;
+    }
+    const UINT clearCounter[4] = {0, 0, 0, 0};
+    m_list->ClearUnorderedAccessViewUint(m_counterUavGpu, m_counterUavCpu,
+                                         m_counter.Get(), clearCounter, 0, nullptr);
 }
 
 void RendererD3D12::draw() {

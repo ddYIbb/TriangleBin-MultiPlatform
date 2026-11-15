@@ -13,6 +13,7 @@
 
 #include <cstring>
 #include <cstdio>
+#include <cstdlib>
 #include <ctime>
 
 // ---------------------------------------------------------------------------
@@ -446,6 +447,17 @@ int main(int argc, char** argv) {
         int gpu_target = requestedAdapter;
         ULONGLONG gpu_target_changed = GetTickCount64();
         bool gpu_target_set = false;
+        // Stress-test hook for the GPU-switch hang: when TB_AUTOSWITCH_MS is
+        // set to a positive number, toggle between Auto and adapter 0 every N
+        // milliseconds so the switch path can be hammered automatically.
+        // Unset/zero by default, which keeps normal behavior unchanged.
+        char autoswitchBuf[32] = {};
+        const DWORD autoswitchLen = GetEnvironmentVariableA("TB_AUTOSWITCH_MS",
+                                                            autoswitchBuf,
+                                                            sizeof(autoswitchBuf));
+        const UINT autoswitchMs =
+            (autoswitchLen > 0 && autoswitchLen < sizeof(autoswitchBuf))
+                ? (UINT)atoi(autoswitchBuf) : 0;
 
         while (!done) {
             SDL_Event e;
@@ -558,7 +570,7 @@ int main(int argc, char** argv) {
 
             ImGui::Checkbox("Auto Increment", &auto_increment);
             if (auto_increment) {
-                ImGui::SliderFloat("ppf", &frag_speed, 0, 10, "%.1f%");
+                ImGui::SliderFloat("ppf", &frag_speed, 0, 10, "%.1f");
                 frag_percentage += frag_speed;
             }
 
@@ -624,6 +636,14 @@ int main(int argc, char** argv) {
 
             renderer->present();
 
+            // Stress-test: periodically request a GPU switch when enabled.
+            if (autoswitchMs > 0 &&
+                GetTickCount64() - gpu_target_changed >= autoswitchMs) {
+                gpu_target = (gpu_target == -1) ? 0 : -1;
+                gpu_target_changed = GetTickCount64();
+                gpu_target_set = true;
+            }
+
             // Apply the debounced GPU switch once the selection has settled
             // (300 ms without a newer choice). Debouncing coalesces rapid
             // clicking into a single device re-creation.
@@ -638,6 +658,12 @@ int main(int argc, char** argv) {
                 int curW = clientW, curH = clientH;
                 SDL_GetWindowSize(window, &curW, &curH);
                 if (curW <= 0 || curH <= 0) { curW = clientW; curH = clientH; }
+                // Let the just-presented frame retire before tearing the device
+                // down: switching immediately after Present(0,0) leaves the
+                // swapchain holding one in-flight flip, and destroying it in
+                // that window is the likely source of the occasional GPU-switch
+                // hang. One v-swap period is invisible next to the 300 ms debounce.
+                Sleep(16);
                 shutdownImguiD3D(renderer.get());
                 renderer.reset();
                 renderer = createRenderer(Backend::Auto, hwnd, curW, curH, target);

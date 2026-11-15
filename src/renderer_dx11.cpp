@@ -422,10 +422,17 @@ bool RendererD3D11::createBuffers() {
     init.pSysMem = vcolor;
     if (FAILED(m_device->CreateBuffer(&bd, &init, &m_cbVS))) return false;
 
+    // Per-frame constants are rewritten every frame, so keep the buffer
+    // dynamic and update it with Map(DISCARD) instead of a full-subresource
+    // copy (same 32 bytes, same values, cheaper per frame).
     bd.ByteWidth = sizeof(FrameCB);
     bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    bd.Usage = D3D11_USAGE_DYNAMIC;
+    bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     init.pSysMem = nullptr;
     if (FAILED(m_device->CreateBuffer(&bd, nullptr, &m_cbPS))) return false;
+    bd.Usage = D3D11_USAGE_DEFAULT;
+    bd.CPUAccessFlags = 0;
 
     bd.ByteWidth = 16;
     bd.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
@@ -491,23 +498,22 @@ void RendererD3D11::draw() {
     FrameCB cb = {};
     cb.color[0] = 0.5f; cb.color[1] = 0.5f; cb.color[2] = 0.f; cb.color[3] = 1.f;
     cb.frags_to_shade = frag_count;
-    m_ctx->UpdateSubresource(m_cbPS.Get(), 0, nullptr, &cb, 0, 0);
+    D3D11_MAPPED_SUBRESOURCE mappedCB = {};
+    if (SUCCEEDED(m_ctx->Map(m_cbPS.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCB))) {
+        memcpy(mappedCB.pData, &cb, sizeof(cb));
+        m_ctx->Unmap(m_cbPS.Get(), 0);
+    }
 
     // Bind the counter UAV through the output-merger stage (this SDK's headers
     // only expose OMSetRenderTargetsAndUnorderedAccessViews, and OM UAV slots
-    // are the same slots the pixel shader sees).
+    // are the same slots the pixel shader sees). The fragment counter is reset
+    // with a GPU-side UAV clear while the view stays bound, which avoids the
+    // unbind / CPU update / rebind round trip the old code did every frame.
     ID3D11UnorderedAccessView* uav = m_counterUAV.Get();
     m_ctx->OMSetRenderTargetsAndUnorderedAccessViews(
         1, &rtv, m_dsv.Get(), 1, 1, &uav, nullptr);
-
-    // Reset the fragment counter (must be unbound while updating).
-    ID3D11UnorderedAccessView* uavNull[1] = { nullptr };
-    m_ctx->OMSetRenderTargetsAndUnorderedAccessViews(
-        1, &rtv, m_dsv.Get(), 1, 1, uavNull, nullptr);
-    uint32_t zero = 0;
-    m_ctx->UpdateSubresource(m_counter.Get(), 0, nullptr, &zero, 0, 0);
-    m_ctx->OMSetRenderTargetsAndUnorderedAccessViews(
-        1, &rtv, m_dsv.Get(), 1, 1, &uav, nullptr);
+    const UINT clearCounter[4] = {0, 0, 0, 0};
+    m_ctx->ClearUnorderedAccessViewUint(m_counterUAV.Get(), clearCounter);
 
     m_ctx->IASetInputLayout(m_il.Get());
     m_ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
