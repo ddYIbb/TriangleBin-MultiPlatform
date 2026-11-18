@@ -65,7 +65,7 @@ The macOS build extracts to <code>TriangleBin.app</code>, a universal binary for
 
 ## Relationship to the Original
 
-This is a multi-platform port collection, not a patch. The core idea, controls and measurement method come from [TriangleBin](https://github.com/Swung0x48/TriangleBin) by Swung 0x48 (MIT). The Windows DirectX source lives in this repository; the Windows Vulkan and macOS Metal builds are distributed as release artifacts.
+This is a multi-platform port collection, not a patch. The core idea, controls and measurement method come from [TriangleBin](https://github.com/Swung0x48/TriangleBin) by Swung 0x48 (MIT). The Windows DirectX source lives in this repository; the Windows Vulkan, macOS Metal and both Android builds are distributed as [release](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases) artifacts (the Android sources are maintained in a separate Gradle + NDK project).
 
 | | [TriangleBin](https://github.com/Swung0x48/TriangleBin) | TriangleBin-MultiPlatform (this repo) |
 |---|---|---|
@@ -173,6 +173,10 @@ cmake --build build-arm64 --config Release
 ~~~
 
 ARM64 links SDL2 statically and does not need <code>SDL2.dll</code>.
+
+### Android
+
+The Android builds are not built from this repository: they come from a separate Gradle + NDK project (JDK 17, Gradle 7.6.4, Android SDK 31, NDK 27.0.12077973). The GLES build targets <code>minSdk 21</code> and the Vulkan build <code>minSdk 24</code>; both ship arm64-v8a / armeabi-v7a / x86 / x86_64 in a single APK. Their outputs are published directly as release assets, and this repository only carries the README and screenshots.
 
 ### Single-file launcher
 

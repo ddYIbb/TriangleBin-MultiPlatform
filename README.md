@@ -65,7 +65,7 @@ macOS Metal 版解压后得到 <code>TriangleBin.app</code>，为 Intel 与 Appl
 
 ## 与原项目的关系
 
-这是一个多平台移植合集，不是打补丁。核心思路、控制项和测量方式来自 Swung 0x48 的 [TriangleBin](https://github.com/Swung0x48/TriangleBin)（MIT）；Windows DirectX 版源码位于本仓库，Windows Vulkan 与 macOS Metal 版以 [Releases](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases) 成品提供。
+这是一个多平台移植合集，不是打补丁。核心思路、控制项和测量方式来自 Swung 0x48 的 [TriangleBin](https://github.com/Swung0x48/TriangleBin)（MIT）；Windows DirectX 版源码位于本仓库，Windows Vulkan、macOS Metal 与 Android 两版以 [Releases](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases) 成品提供（Android 源码在独立的 Gradle + NDK 工程中维护）。
 
 | | [TriangleBin](https://github.com/Swung0x48/TriangleBin) | TriangleBin-MultiPlatform（本仓库） |
 |---|---|---|
@@ -173,6 +173,10 @@ cmake --build build-arm64 --config Release
 ~~~
 
 ARM64 静态链接 SDL2，因此不需要 <code>SDL2.dll</code>。
+
+### Android
+
+Android 两版不在本仓库构建：它们来自独立的 Gradle + NDK 工程（JDK 17、Gradle 7.6.4、Android SDK 31、NDK 27.0.12077973），GLES 版 <code>minSdk 21</code>、Vulkan 版 <code>minSdk 24</code>，两者的 ABI 均为 arm64-v8a / armeabi-v7a / x86 / x86_64。构建产物直接作为 Release 资产分发，本仓库只提供 README 与截图。
 
 ### 单文件启动器
 
