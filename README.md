@@ -4,14 +4,16 @@
 
 [![Release](https://img.shields.io/github/v/release/ddYIbb/TriangleBin-MultiPlatform?style=flat-square&label=release)](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases)
 [![License](https://img.shields.io/github/license/ddYIbb/TriangleBin-MultiPlatform?style=flat-square)](LICENSE)
-![Platform](https://img.shields.io/badge/platform-Windows%207%2B%20%7C%20macOS%2010.15%2B-blue?style=flat-square)
-![API](https://img.shields.io/badge/API-Direct3D%2011%2F12%20%C2%B7%20Vulkan%201.0%20%C2%B7%20Metal-9cf?style=flat-square)
+![Platform](https://img.shields.io/badge/platform-Windows%207%2B%20%7C%20macOS%2010.15%2B%20%7C%20Android%205.0%2B-blue?style=flat-square)
+![API](https://img.shields.io/badge/API-Direct3D%2011%2F12%20%C2%B7%20Vulkan%201.0%20%C2%B7%20Metal%20%C2%B7%20OpenGL%20ES%203.1-9cf?style=flat-square)
 
 [TriangleBin](https://github.com/Swung0x48/TriangleBin) 的多平台移植合集，用于测试 GPU 的填充率与着色顺序：
 
 - **Windows DirectX** — Direct3D 11 / 12，x86 / x64 / ARM64，支持 Windows 7 及更新系统
 - **Windows Vulkan** — Vulkan 1.0，x86 / x64 / ARM64，支持 Windows 7 及更新系统（需显卡驱动提供 Vulkan 支持）
 - **macOS Metal** — Intel（macOS 10.15+）与 Apple Silicon（macOS 11.0+）通用版
+- **Android OpenGL ES** — OpenGL ES 3.2（不支持时自动回退 3.1），单 APK 含四套 ABI，支持 Android 5.0 及更新系统
+- **Android Vulkan** — Vulkan 1.0，单 APK 含四套 ABI，支持 Android 7.0 及更新系统
 
 它绘制一叠互相重叠的三角形，并统计 GPU 实际光栅化了多少个片段。这个数量可以判断你的显卡是 **IMR**（立即模式渲染，每个三角形的每个覆盖像素都要着色）还是 **TBR**（分块渲染，几何按 tile 分桶，每个像素基本只着色一次）。
 
@@ -26,6 +28,8 @@
 | Windows DirectX | [TriangleBin-Windows-DirectX-v1.1.0.exe](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Windows-DirectX-v1.1.0.exe) | x86 / x64 / ARM64 |
 | Windows Vulkan | [TriangleBin-Windows-Vulkan-v1.1.0.exe](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Windows-Vulkan-v1.1.0.exe) | x86 / x64 / ARM64 |
 | macOS Metal | [TriangleBin-macOS-Metal-v1.1.0.zip](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-macOS-Metal-v1.1.0.zip) | Universal（Intel / Apple Silicon） |
+| Android OpenGL ES | [TriangleBin-Android-OpenGLES-v1.1.0.apk](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Android-OpenGLES-v1.1.0.apk) | arm64-v8a / armeabi-v7a / x86 / x86_64 |
+| Android Vulkan | [TriangleBin-Android-Vulkan-v1.1.0.apk](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Android-Vulkan-v1.1.0.apk) | arm64-v8a / armeabi-v7a / x86 / x86_64 |
 
 > **不确定下载哪个？** Windows 用户直接选 **DirectX 版**即可：兼容性最好，会在 D3D12 与 D3D11 之间自动选择。需要做 Vulkan 对比测试时再使用 **Vulkan 版**。下载文件的 SHA-256 校验值见 [Release 说明](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/tag/v1.1.0)。
 
@@ -40,6 +44,8 @@ macOS Metal 版解压后得到 <code>TriangleBin.app</code>，为 Intel 与 Appl
 | Windows DirectX | Windows 7 及更新 | Direct3D 12 / 11（自动选择） | 着色器已内嵌，无需 <code>d3dcompiler_47.dll</code> 或 VC++ 运行库 |
 | Windows Vulkan | Windows 7 及更新 | Vulkan 1.0 core + <code>VK_KHR_swapchain</code> | 需要显卡驱动提供 Vulkan loader |
 | macOS Metal | macOS 10.15+（Intel）/ 11.0+（Apple Silicon） | Metal | 通用二进制 |
+| Android OpenGL ES | Android 5.0+（API 21） | OpenGL ES 3.2 / 3.1（自动回退） | 单 APK 含 arm64-v8a / armeabi-v7a / x86 / x86_64；需要设备支持 ES 3.1 |
+| Android Vulkan | Android 7.0+（API 24） | Vulkan 1.0+ | 单 APK 含 arm64-v8a / armeabi-v7a / x86 / x86_64 |
 
 ## 功能亮点
 
@@ -63,11 +69,34 @@ macOS Metal 版解压后得到 <code>TriangleBin.app</code>，为 Intel 与 Appl
 
 | | [TriangleBin](https://github.com/Swung0x48/TriangleBin) | TriangleBin-MultiPlatform（本仓库） |
 |---|---|---|
-| 图形 API | OpenGL / OpenGL ES | Windows DirectX 11/12、Windows Vulkan 1.0、macOS Metal |
-| 平台 | Android（APK）+ Windows x64 | Windows：x86 / x64 / ARM64；macOS：Intel / Apple Silicon |
+| 图形 API | OpenGL / OpenGL ES | Windows DirectX 11/12、Windows Vulkan 1.0、macOS Metal、Android OpenGL ES 3.1、Android Vulkan 1.0 |
+| 平台 | Android（APK，按 ABI 分包）+ Windows x64 | Windows：x86 / x64 / ARM64；macOS：Intel / Apple Silicon；Android：单 APK 四 ABI |
 | 构建 | Gradle + Android NDK | CMake + MSVC（Windows DirectX 源码）；Vulkan / macOS 以 Releases 成品提供 |
 | 选择 GPU | 无 | Windows DirectX / Vulkan 版支持运行时选择 GPU（F2） |
-| 启动失败诊断 | 无 | 启动失败时生成诊断报告 |
+| 启动失败诊断 | 无 | Windows 启动失败时生成诊断报告；Android 版在图形上下文创建失败时打印原因并优雅退出，不闪退 |
+
+## Android 版与原版 TriangleBin 的区别
+
+Android 两个版本都是原版 Android 应用的源码级再构建（原版只提供 OpenGL ES 版，且要求 ES 3.2），**界面、控件、着色器、Frag Count 计算方式完全一致**，只做了下面这几处兼容性与性能改动：
+
+| 项目 | 原版 TriangleBin（Android） | 本仓库 Android 版 |
+|---|---|---|
+| 渲染上下文 | 直接创建 OpenGL ES 3.2 上下文，设备只支持 3.1 时创建失败并崩溃退出 | 先试 ES 3.2，失败后记录 <code>Could not create OpenGL ES 3.2 context, retrying 3.1</code> 并改用 ES 3.1 重建；两者都失败时打印 <code>Could not create required OpenGL ES 3.1 context.</code> 后正常退出，不闪退 |
+| 最低图形能力 | OpenGL ES 3.2 | OpenGL ES 3.1（着色器依赖 <code>atomicCounterIncrement</code> 与 std140 UniformBlock，ES 3.0 无法实现，因此 3.1 是硬底线） |
+| <code>ppf</code> 显示 | 格式串为 <code>"%.1f%%"</code>，Android bionic 的 <code>vsnprintf</code> 把 <code>%%</code> 压成一个 <code>%</code>，界面数字错位 | 格式串改为 <code>"%.1f"</code>，显示 <code>1.0</code>，与桌面版一致 |
+| 应用名 / 包名 | Triangle Bin / <code>com.socpk.trianglebin</code>，GLES 与 Vulkan 版互相顶掉 | Triangle Bin (GLES) / <code>com.socpk.trianglebin.opengles</code>，Triangle Bin (VK) / <code>com.trianglebin.vulkan</code>，两版可共存 |
+| APK 拆分 | 按 ABI 分包 | 单 APK 内含 arm64-v8a / armeabi-v7a / x86 / x86_64 |
+| 每帧开销 | 每帧 3 次 <code>glGetString</code>、1 次 <code>glGetIntegerv(GL_VIEWPORT)</code>、多次 <code>glBufferData</code> 重分配与 uniform 查询，release 下仍有最多 15 次 <code>glGetError</code> | 以上全部改为启动时缓存 / 一次分配 / 按需上传，<code>glCheckError</code> 在 NDEBUG 下编译为空 |
+| Vulkan 后端 | 无（原版只有 OpenGL ES） | 新增 Vulkan 1.0 后端，Controls 面板与 GLES 版同结构，切后台自动重建 swapchain |
+| 版本号 | — | 与其它三平台统一为 v1.1.0（versionCode 2） |
+
+实测（本地 Android 12 x86_64 模拟器，10 秒 <code>/proc/&lt;pid&gt;/stat</code> 采样）：GLES 版主循环 CPU 24.6% → 21.7%，APK 5,369,064 → 5,353,951 字节；Vulkan 版 11.5% → 11.3%（Vulkan 侧每帧本来只有约 1.8 ms）。两版都被 vsync 限制在 60 FPS，因此帧率数字看不出差别，收益体现在 CPU 占用与 GL/Vulkan 调用数上。
+
+Android 版源码位于独立的 Android 工程（Gradle + NDK），与本仓库的 Windows DirectX 源码分开维护，成品通过 Releases 分发。
+
+| Android OpenGL ES（PCT-AL10 / Kirin 980，100% + Tris 200） | Android Vulkan（PCT-AL10 / Mali-G76，100% + Tris 0） |
+|---|---|
+| ![Android OpenGL ES](docs/android-opengles.png) | ![Android Vulkan](docs/android-vulkan.png) |
 
 ## 界面说明
 
@@ -80,7 +109,7 @@ macOS Metal 版解压后得到 <code>TriangleBin.app</code>，为 Intel 与 Appl
 | <code>ppf</code> | 每帧增量：勾选 Auto Increment 后 <code>Rendered/Screen %</code> 每帧增加的数值，范围 0–10。 |
 | <code>Frag Count</code> | 本帧 GPU 实际光栅化的片段数，应当不超过目标值。 |
 | <code>clear color</code> | 背景色。 |
-| <code>F2</code> | 打开 / 关闭选择 GPU 窗口。 |
+| <code>F2</code> | 打开 / 关闭选择 GPU 窗口（仅 Windows 版；Android 版没有多适配器选择，Controls 顶部直接显示当前设备与驱动/API 版本）。 |
 
 怎么看结果：提高 <code>Tris</code>，观察 <code>Frag Count</code>。如果它随三角形数量持续上升，说明每个三角形的覆盖像素都被着色，这是 IMR 的行为；如果它明显低于目标值并趋于平稳，说明几何被分桶、每个像素每 tile 只着色一次，这是 TBR 的行为。
 
@@ -97,6 +126,15 @@ Windows 版的着色器已在编译期嵌入，并使用静态 CRT。
 
 **macOS 提示无法打开 <code>TriangleBin.app</code>？**
 右键点击应用选择“打开”；或在“系统设置 → 隐私与安全性”中允许运行。
+
+**Android 版应该下载哪一个？**
+兼容性优先选 **OpenGL ES 版**（Android 5.0+，几乎覆盖所有设备）；需要做 Vulkan 对比测试时再用 **Vulkan 版**（Android 7.0+，需要设备支持 Vulkan 1.0）。两个 APK 包名不同，可以同时安装。
+
+**Android 版为什么需要 OpenGL ES 3.1？**
+着色器用 <code>atomicCounterIncrement</code> 统计片段数、用 std140 UniformBlock 传参数，这两项都是 ES 3.1 才有的；ES 3.0 设备会在启动时打印 <code>Could not create required OpenGL ES 3.1 context.</code> 后退出，这是预期行为。
+
+**Android 版启动后是黑屏？**
+默认 <code>Rendered/Screen %</code> 为 0%，画面就是黑的（与原版一致）。点 <code>100%</code> 按钮即可显示渐变；把 <code>Tris</code> 拖到 0 可看完整全屏渐变。
 
 **怎么确认当前用的是 D3D12 还是 D3D11？**
 Controls 窗口顶部会显示 <code>D3D12CreateDevice (API): "Direct3D 12"</code> 或对应的 Direct3D 11 信息。
@@ -155,7 +193,7 @@ cmake --build tools/launcher/build --config Release
 src/                 DirectX 11/12 渲染器、主程序与 SDL2 兼容层
 tools/launcher/      单文件启动器（嵌入 x86 / x64 / ARM64 载荷）
 deps/                SDL2、Dear ImGui、GLM
-docs/                README 截图
+docs/                README 截图（Windows / Android）
 CMakeLists.txt       顶层构建配置
 ~~~
 
