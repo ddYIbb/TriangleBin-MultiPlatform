@@ -34,8 +34,11 @@ HarmonyOS 版用同一个安装包适配六类设备：手机 / 平板 / 2in1 �
 | Android OpenGL ES | [TriangleBin-Android-OpenGLES-v1.1.0.apk](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Android-OpenGLES-v1.1.0.apk) | arm64-v8a / armeabi-v7a / x86 / x86_64 |
 | Android Vulkan | [TriangleBin-Android-Vulkan-v1.1.0.apk](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Android-Vulkan-v1.1.0.apk) | arm64-v8a / armeabi-v7a / x86 / x86_64 |
 | HarmonyOS 统一包 | [TriangleBin-HarmonyOS-Unified-20261120.hap](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-HarmonyOS-Unified-20261120.hap) | arm64-v8a / x86_64 |
+| HarmonyOS 源码包（自行签名） | [TriangleBin-HarmonyOS-Source-20261120.zip](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-HarmonyOS-Source-20261120.zip) | DevEco Studio 工程（不含签名） |
 
 > HarmonyOS 统一包在 <code>module.json</code> 中声明 <code>phone</code>、<code>tablet</code>、<code>2in1</code>、<code>wearable</code>、<code>car</code>、<code>tv</code> 六类设备；单包同时含 <code>arm64-v8a</code> 与 <code>x86_64</code>。
+
+> 预编译 HAP 使用开发调试签名，Profile 绑定开发者已登记设备；未登记设备安装会失败。请下载源码包，用 DevEco Studio 的“自动签名”为自己的设备签名后构建。面向所有用户公开发布时，请使用 AppGallery Connect 的 release 证书/Profile。
 
 > **不确定下载哪个？** Windows 用户直接选 **DirectX 版**即可：兼容性最好，会在 D3D12 与 D3D11 之间自动选择。需要做 Vulkan 对比测试时再使用 **Vulkan 版**。下载文件的 SHA-256 校验值见 [Release 说明](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/tag/v1.1.0)。
 
@@ -124,6 +127,18 @@ HarmonyOS 版把同一套 TriangleBin 逻辑移植到 ArkTS + C++/Vulkan，并�
 
 Vulkan 后端同时加入 XEngine 1.5× 空间超分：场景按每轴 2/3 的长度渲染，再由 <code>XEG_spatial_upscale</code> 扩展到原生分辨率。设备支持时默认开启，Controls 内可随时切换；不支持时自动回退到普通渲染。HAP 内含 arm64-v8a 与 x86_64，<code>module.json</code> 声明 <code>phone</code>、<code>tablet</code>、<code>2in1</code>、<code>wearable</code>、<code>car</code>、<code>tv</code> 六类 deviceTypes，最低 HarmonyOS 5.0（API 12）。
 
+### 自行签名
+
+预编译 HAP 使用开发调试签名，Profile 绑定开发者已登记设备；未登记设备会安装失败。若你的设备不在其中，或希望用自己的开发者账号签名，请使用源码包：
+
+1. 下载并解压 <code>TriangleBin-HarmonyOS-Source-20261120.zip</code>；
+2. 用 DevEco Studio 5.0+ 打开工程，等待 ohpm / Hvigor Sync 完成；
+3. 连接设备，在 <code>File &gt; Project Structure &gt; Signing Configs</code> 中勾选 <code>Automatically generate signature</code>，登录华为账号；
+4. 选择 <code>Build &gt; Build Hap(s)</code>，产物位于 <code>entry/build/default/outputs/default/entry-default-signed.hap</code>；
+5. 用 <code>hdc install -r &lt;hap&gt;</code> 安装到设备。
+
+源码包内 <code>README.md</code> 有完整步骤、包名冲突和 release 签名说明。面向所有用户公开发布时，请使用 AppGallery Connect 的 release 证书/Profile 签名。
+
 ## 界面说明
 
 | 控件 | 含义 |
@@ -207,7 +222,7 @@ Android 两版不在本仓库构建：它们来自独立的 Gradle + NDK 工程�
 
 ### HarmonyOS
 
-HarmonyOS 版不在本仓库构建：源码位于独立的 DevEco Studio 工程，使用 ArkTS 页面 + C++/Vulkan 渲染层，<code>compatibleSdkVersion</code> 为 5.0.0(12)。构建产物为单个 HAP，内含 arm64-v8a 与 x86_64，并声明 phone / tablet / 2in1 / wearable / car / tv 六类 deviceTypes；成品通过 Releases 分发。
+HarmonyOS 版不在本仓库构建：源码作为 Release 资产 <code>TriangleBin-HarmonyOS-Source-20261120.zip</code> 提供，是独立的 DevEco Studio 工程，使用 ArkTS 页面 + C++/Vulkan 渲染层，<code>compatibleSdkVersion</code> 为 5.0.0(12)。构建产物为单个 HAP，内含 arm64-v8a 与 x86_64，并声明 phone / tablet / 2in1 / wearable / car / tv 六类 deviceTypes；成品通过 Releases 分发。使用 DevEco Studio 的“自动签名”为自己的设备签名后即可构建，步骤见源码包内 <code>README.md</code>。
 
 ### 单文件启动器
 

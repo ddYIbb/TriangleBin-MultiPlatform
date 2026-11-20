@@ -34,8 +34,11 @@ Latest release: [**v1.1.0**](https://github.com/ddYIbb/TriangleBin-MultiPlatform
 | Android OpenGL ES | [TriangleBin-Android-OpenGLES-v1.1.0.apk](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Android-OpenGLES-v1.1.0.apk) | arm64-v8a / armeabi-v7a / x86 / x86_64 |
 | Android Vulkan | [TriangleBin-Android-Vulkan-v1.1.0.apk](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Android-Vulkan-v1.1.0.apk) | arm64-v8a / armeabi-v7a / x86 / x86_64 |
 | HarmonyOS unified | [TriangleBin-HarmonyOS-Unified-20261120.hap](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-HarmonyOS-Unified-20261120.hap) | arm64-v8a / x86_64 |
+| HarmonyOS source (self-sign) | [TriangleBin-HarmonyOS-Source-20261120.zip](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-HarmonyOS-Source-20261120.zip) | DevEco Studio project (unsigned) |
 
 > The HarmonyOS package declares <code>phone</code>, <code>tablet</code>, <code>2in1</code>, <code>wearable</code>, <code>car</code> and <code>tv</code> in <code>module.json</code>; one HAP contains both <code>arm64-v8a</code> and <code>x86_64</code>.
+
+> The prebuilt HAP is development-signed and its profile is bound to the developer's registered devices; installation on other devices will fail. Download the source package and use DevEco Studio's automatic signing for your own device. For public distribution, use an AppGallery Connect release certificate/profile.
 
 > **Not sure which one to download?** On Windows, pick the **DirectX build** — it has the best compatibility and automatically chooses between D3D12 and D3D11. Use the **Vulkan build** when you need a Vulkan comparison. SHA-256 checksums for all downloads are listed in the [release notes](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/tag/v1.1.0).
 
@@ -124,6 +127,18 @@ The HarmonyOS build ports the same TriangleBin logic to ArkTS + C++/Vulkan and c
 
 The Vulkan backend also adds XEngine 1.5× spatial upscaling: the scene is rendered at 2/3 length on each axis and expanded to native resolution through <code>XEG_spatial_upscale</code>. It is on by default when supported and can be toggled in Controls; unsupported devices fall back to the normal path. The HAP contains arm64-v8a and x86_64, declares <code>phone</code>, <code>tablet</code>, <code>2in1</code>, <code>wearable</code>, <code>car</code> and <code>tv</code> in <code>module.json</code>, and requires HarmonyOS 5.0 (API 12) or newer.
 
+### Signing It Yourself
+
+The prebuilt HAP is development-signed, and its profile is bound to the developer's registered devices; installation on other devices will fail. If your device is not covered, or you want to sign with your own account, use the source package:
+
+1. Download and unzip <code>TriangleBin-HarmonyOS-Source-20261120.zip</code>.
+2. Open the project in DevEco Studio 5.0+ and wait for ohpm / Hvigor Sync.
+3. Connect your device, open <code>File &gt; Project Structure &gt; Signing Configs</code>, enable <code>Automatically generate signature</code>, and sign in with your Huawei account.
+4. Choose <code>Build &gt; Build Hap(s)</code>; the signed HAP is written to <code>entry/build/default/outputs/default/entry-default-signed.hap</code>.
+5. Install it with <code>hdc install -r &lt;hap&gt;</code>.
+
+The archive's <code>README.md</code> covers the full steps, bundle-name conflicts and release signing. For public distribution, sign with an AppGallery Connect release certificate/profile.
+
 ## UI Reference
 
 | Control | Meaning |
@@ -207,7 +222,7 @@ The Android builds are not built from this repository: they come from a separate
 
 ### HarmonyOS
 
-The HarmonyOS build is not built from this repository: its source lives in a separate DevEco Studio project using ArkTS pages and a C++/Vulkan renderer, with <code>compatibleSdkVersion</code> 5.0.0(12). The output is a single HAP containing arm64-v8a and x86_64 and declaring phone / tablet / 2in1 / wearable / car / tv deviceTypes; it is published through Releases.
+The HarmonyOS build is not built from this repository: its source is provided as the release asset <code>TriangleBin-HarmonyOS-Source-20261120.zip</code>, a separate DevEco Studio project using ArkTS pages and a C++/Vulkan renderer, with <code>compatibleSdkVersion</code> 5.0.0(12). The output is a single HAP containing arm64-v8a and x86_64 and declaring phone / tablet / 2in1 / wearable / car / tv deviceTypes; it is published through Releases. Use DevEco Studio's automatic signing for your own device, then build; see <code>README.md</code> in the source package.
 
 ### Single-file launcher
 
