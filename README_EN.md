@@ -14,9 +14,9 @@ A multi-platform port collection of [TriangleBin](https://github.com/Swung0x48/T
 - **macOS Metal** — Universal build for Intel (macOS 10.15+) and Apple Silicon (macOS 11.0+)
 - **Android OpenGL ES** — OpenGL ES 3.2 with automatic fallback to 3.1, one APK with four ABIs, Android 5.0 and newer
 - **Android Vulkan** — Vulkan 1.0, one APK with four ABIs, Android 7.0 and newer
-- **HarmonyOS unified package** — one HAP for phone, tablet, 2in1, wearable, car and TV; Vulkan 1.0; XEngine 1.5× spatial upscaling built in
+- **HarmonyOS source (self-sign)** — one source tree for phone, tablet, 2in1, wearable, car and TV; Vulkan 1.0; XEngine 1.5× spatial upscaling built in
 
-The HarmonyOS build uses one package across six device types: phone / tablet / 2in1 share the desktop layout, wearables support both crown and touch input, and car / TV use a wide Controls layout.
+The HarmonyOS build uses one source tree across six device types: phone / tablet / 2in1 share the desktop layout, wearables support both crown and touch input, and car / TV use a wide Controls layout.
 
 It draws a stack of overlapping triangles and counts how many fragments the GPU actually rasterizes. That number tells you whether your GPU is **IMR** (immediate-mode rendering: every covered pixel of every triangle gets shaded) or **TBR** (tile-based rendering: geometry is binned per tile and each pixel is shaded roughly once).
 
@@ -33,12 +33,11 @@ Latest release: [**v1.1.0**](https://github.com/ddYIbb/TriangleBin-MultiPlatform
 | macOS Metal | [TriangleBin-macOS-Metal-v1.1.0.zip](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-macOS-Metal-v1.1.0.zip) | Universal (Intel / Apple Silicon) |
 | Android OpenGL ES | [TriangleBin-Android-OpenGLES-v1.1.0.apk](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Android-OpenGLES-v1.1.0.apk) | arm64-v8a / armeabi-v7a / x86 / x86_64 |
 | Android Vulkan | [TriangleBin-Android-Vulkan-v1.1.0.apk](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Android-Vulkan-v1.1.0.apk) | arm64-v8a / armeabi-v7a / x86 / x86_64 |
-| HarmonyOS unified | [TriangleBin-HarmonyOS-Unified-20261120.hap](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-HarmonyOS-Unified-20261120.hap) | arm64-v8a / x86_64 |
 | HarmonyOS source (self-sign) | [TriangleBin-HarmonyOS-Source-20261120.zip](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-HarmonyOS-Source-20261120.zip) | DevEco Studio project (unsigned) |
 
-> The HarmonyOS package declares <code>phone</code>, <code>tablet</code>, <code>2in1</code>, <code>wearable</code>, <code>car</code> and <code>tv</code> in <code>module.json</code>; one HAP contains both <code>arm64-v8a</code> and <code>x86_64</code>.
+> The HarmonyOS source project declares <code>phone</code>, <code>tablet</code>, <code>2in1</code>, <code>wearable</code>, <code>car</code> and <code>tv</code> in <code>module.json</code>; the build output is one HAP containing both <code>arm64-v8a</code> and <code>x86_64</code>.
 
-> The prebuilt HAP is development-signed and its profile is bound to the developer's registered devices; installation on other devices will fail. Download the source package and use DevEco Studio's automatic signing for your own device. For public distribution, use an AppGallery Connect release certificate/profile.
+> No prebuilt HAP is provided for HarmonyOS: development-signed HAPs are bound to the developer's registered devices and are not suitable for public download. Download the source package and use DevEco Studio's automatic signing for your own device. For public distribution, use an AppGallery Connect release certificate/profile.
 
 > **Not sure which one to download?** On Windows, pick the **DirectX build** — it has the best compatibility and automatically chooses between D3D12 and D3D11. Use the **Vulkan build** when you need a Vulkan comparison. SHA-256 checksums for all downloads are listed in the [release notes](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/tag/v1.1.0).
 
@@ -46,7 +45,7 @@ Both Windows builds are **single-file launchers**: one <code>.exe</code> contain
 
 The macOS build extracts to <code>TriangleBin.app</code>, a universal binary for Intel and Apple Silicon. If Gatekeeper blocks the first launch, right-click the app and choose "Open".
 
-The HarmonyOS package is a single HAP with arm64-v8a and x86_64 payloads. On wearables it asks you to choose "crown" or "touch" on every foreground entry; car and TV use the wide Controls layout automatically.
+The HarmonyOS source package builds a single HAP with arm64-v8a and x86_64 payloads. On wearables it asks you to choose "crown" or "touch" on every foreground entry; car and TV use the wide Controls layout automatically.
 
 ## Platform Requirements
 
@@ -57,13 +56,13 @@ The HarmonyOS package is a single HAP with arm64-v8a and x86_64 payloads. On wea
 | macOS Metal | macOS 10.15+ (Intel) / 11.0+ (Apple Silicon) | Metal | Universal binary |
 | Android OpenGL ES | Android 5.0+ (API 21) | OpenGL ES 3.2 / 3.1 (automatic) | One APK with arm64-v8a / armeabi-v7a / x86 / x86_64; requires ES 3.1 support |
 | Android Vulkan | Android 7.0+ (API 24) | Vulkan 1.0+ | One APK with arm64-v8a / armeabi-v7a / x86 / x86_64 |
-| HarmonyOS unified | HarmonyOS 5.0+ (API 12) | Vulkan 1.0 | One HAP declares phone / tablet / 2in1 / wearable / car / tv; wearables support crown and touch input |
+| HarmonyOS source | HarmonyOS 5.0+ (API 12) | Vulkan 1.0 | Builds one HAP declaring phone / tablet / 2in1 / wearable / car / tv; wearables support crown and touch input |
 
 ## Features
 
 **Automatic API selection.** The Windows DirectX build creates a Direct3D 12 device first and falls back to Direct3D 11 if that fails, with an explanation in the log.
 
-**One HAP, six device types.** The HarmonyOS build declares <code>phone</code>, <code>tablet</code>, <code>2in1</code>, <code>wearable</code>, <code>car</code> and <code>tv</code> in one package: phone / tablet / 2in1 use the desktop layout, car / TV switch to the wide layout based on screen size, and wearables use a circular-safe-area panel. On every foreground entry, the wearable asks you to choose "crown" or "touch"; the two modes then use crown rotation or -/+ buttons, and both keep ppf, Tris, Reset and Auto Increment.
+**One source tree, six device types.** The HarmonyOS build declares <code>phone</code>, <code>tablet</code>, <code>2in1</code>, <code>wearable</code>, <code>car</code> and <code>tv</code> in one project; the build output is a single HAP: phone / tablet / 2in1 use the desktop layout, car / TV switch to the wide layout based on screen size, and wearables use a circular-safe-area panel. On every foreground entry, the wearable asks you to choose "crown" or "touch"; the two modes then use crown rotation or -/+ buttons, and both keep ppf, Tris, Reset and Auto Increment.
 
 **XEngine 1.5× spatial upscaling.** The HarmonyOS Vulkan backend renders the scene at 2/3 length on each axis and expands it to native resolution through <code>XEG_spatial_upscale</code> — an effective 1.5× upscale. It is on by default when the device supports XEngine and can be toggled in Controls; unsupported devices show <code>unsupported</code> and keep the normal render path.
 
@@ -81,13 +80,13 @@ The HarmonyOS package is a single HAP with arm64-v8a and x86_64 payloads. On wea
 
 ## Relationship to the Original
 
-This is a multi-platform port collection, not a patch. The core idea, controls and measurement method come from [TriangleBin](https://github.com/Swung0x48/TriangleBin) by Swung 0x48 (MIT). The Windows DirectX source lives in this repository; the Windows Vulkan, macOS Metal, both Android builds and the HarmonyOS unified package are distributed as [release](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases) artifacts (the Android sources are maintained in a separate Gradle + NDK project, the HarmonyOS sources in a separate DevEco Studio project).
+This is a multi-platform port collection, not a patch. The core idea, controls and measurement method come from [TriangleBin](https://github.com/Swung0x48/TriangleBin) by Swung 0x48 (MIT). The Windows DirectX source lives in this repository; the Windows Vulkan, macOS Metal, both Android builds and the HarmonyOS source package are distributed as [release](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases) artifacts (the Android sources are maintained in a separate Gradle + NDK project, the HarmonyOS sources in a separate DevEco Studio project).
 
 | | [TriangleBin](https://github.com/Swung0x48/TriangleBin) | TriangleBin-MultiPlatform (this repo) |
 |---|---|---|
 | Graphics API | OpenGL / OpenGL ES | Windows DirectX 11/12, Windows Vulkan 1.0, macOS Metal, Android OpenGL ES 3.1, Android Vulkan 1.0, HarmonyOS Vulkan 1.0 |
-| Platforms | Android (APK, split per ABI) + Windows x64 | Windows: x86 / x64 / ARM64; macOS: Intel / Apple Silicon; Android: one APK with four ABIs; HarmonyOS: one HAP for phone / tablet / 2in1 / wearable / car / tv |
-| Build | Gradle + Android NDK | CMake + MSVC (Windows DirectX source); Vulkan / macOS / HarmonyOS as release artifacts (HarmonyOS uses a DevEco Studio + ArkTS/C++ project) |
+| Platforms | Android (APK, split per ABI) + Windows x64 | Windows: x86 / x64 / ARM64; macOS: Intel / Apple Silicon; Android: one APK with four ABIs; HarmonyOS: a source package that builds one HAP for phone / tablet / 2in1 / wearable / car / tv |
+| Build | Gradle + Android NDK | CMake + MSVC (Windows DirectX source); Vulkan / macOS as release artifacts; HarmonyOS as a source release (DevEco Studio + ArkTS/C++ project) |
 | GPU selection | None | Runtime GPU selection in Windows DirectX / Vulkan builds (F2) |
 | Startup diagnostics | None | Error report on Windows startup failure; the Android builds log the reason and exit cleanly instead of crashing |
 | Spatial upscaling | None | XEngine 1.5× spatial upscaling in the HarmonyOS Vulkan build (<code>XEG_spatial_upscale</code>) |
@@ -115,9 +114,9 @@ The Android sources live in a separate Gradle + NDK project; the binaries are di
 |---|---|
 | ![Android OpenGL ES](docs/android-opengles.png) | ![Android Vulkan](docs/android-vulkan.png) |
 
-## HarmonyOS Unified Package
+## HarmonyOS Source Package
 
-The HarmonyOS build ports the same TriangleBin logic to ArkTS + C++/Vulkan and covers six device types with **one HAP**:
+The HarmonyOS build ports the same TriangleBin logic to ArkTS + C++/Vulkan and covers six device types with **one source tree**; the build output is a single HAP:
 
 | Device type | Layout and input |
 |---|---|
@@ -125,11 +124,11 @@ The HarmonyOS build ports the same TriangleBin logic to ArkTS + C++/Vulkan and c
 | wearable | Circular-safe-area panel; on every foreground entry choose "crown" or "touch", then adjust with crown rotation or -/+ buttons |
 | car / tv | Wide Controls layout that adapts to screen size, suited to car and TV viewing distance |
 
-The Vulkan backend also adds XEngine 1.5× spatial upscaling: the scene is rendered at 2/3 length on each axis and expanded to native resolution through <code>XEG_spatial_upscale</code>. It is on by default when supported and can be toggled in Controls; unsupported devices fall back to the normal path. The HAP contains arm64-v8a and x86_64, declares <code>phone</code>, <code>tablet</code>, <code>2in1</code>, <code>wearable</code>, <code>car</code> and <code>tv</code> in <code>module.json</code>, and requires HarmonyOS 5.0 (API 12) or newer.
+The Vulkan backend also adds XEngine 1.5× spatial upscaling: the scene is rendered at 2/3 length on each axis and expanded to native resolution through <code>XEG_spatial_upscale</code>. It is on by default when supported and can be toggled in Controls; unsupported devices fall back to the normal path. The built HAP contains arm64-v8a and x86_64, declares <code>phone</code>, <code>tablet</code>, <code>2in1</code>, <code>wearable</code>, <code>car</code> and <code>tv</code> in <code>module.json</code>, and requires HarmonyOS 5.0 (API 12) or newer.
 
 ### Signing It Yourself
 
-The prebuilt HAP is development-signed, and its profile is bound to the developer's registered devices; installation on other devices will fail. If your device is not covered, or you want to sign with your own account, use the source package:
+HarmonyOS is distributed as a source package only; no prebuilt HAP is provided. Development-signed HAPs are bound to the developer's registered devices and cannot serve public users. Use the source package and sign it with your own developer account:
 
 1. Download and unzip <code>TriangleBin-HarmonyOS-Source-20261120.zip</code>.
 2. Open the project in DevEco Studio 5.0+ and wait for ohpm / Hvigor Sync.
@@ -222,7 +221,7 @@ The Android builds are not built from this repository: they come from a separate
 
 ### HarmonyOS
 
-The HarmonyOS build is not built from this repository: its source is provided as the release asset <code>TriangleBin-HarmonyOS-Source-20261120.zip</code>, a separate DevEco Studio project using ArkTS pages and a C++/Vulkan renderer, with <code>compatibleSdkVersion</code> 5.0.0(12). The output is a single HAP containing arm64-v8a and x86_64 and declaring phone / tablet / 2in1 / wearable / car / tv deviceTypes; it is published through Releases. Use DevEco Studio's automatic signing for your own device, then build; see <code>README.md</code> in the source package.
+The HarmonyOS build is not built from this repository: its source is provided as the release asset <code>TriangleBin-HarmonyOS-Source-20261120.zip</code>, a separate DevEco Studio project using ArkTS pages and a C++/Vulkan renderer, with <code>compatibleSdkVersion</code> 5.0.0(12). The output is a single HAP containing arm64-v8a and x86_64 and declaring phone / tablet / 2in1 / wearable / car / tv deviceTypes. Use DevEco Studio's automatic signing for your own device, then build; see <code>README.md</code> in the source package.
 
 ### Single-file launcher
 

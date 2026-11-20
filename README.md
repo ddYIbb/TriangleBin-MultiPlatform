@@ -14,9 +14,9 @@
 - **macOS Metal** — Intel（macOS 10.15+）与 Apple Silicon（macOS 11.0+）通用版
 - **Android OpenGL ES** — OpenGL ES 3.2（不支持时自动回退 3.1），单 APK 含四套 ABI，支持 Android 5.0 及更新系统
 - **Android Vulkan** — Vulkan 1.0，单 APK 含四套 ABI，支持 Android 7.0 及更新系统
-- **HarmonyOS 统一包** — 一个 HAP 覆盖手机、平板、2in1、手表、车机、电视六类设备；Vulkan 1.0；内置 XEngine 1.5× 空间超分
+- **HarmonyOS 源码包（自行签名）** — 一套源码覆盖手机、平板、2in1、手表、车机、电视六类设备；Vulkan 1.0；内置 XEngine 1.5× 空间超分
 
-HarmonyOS 版用同一个安装包适配六类设备：手机 / 平板 / 2in1 共用桌面布局，手表支持表冠与触屏两种输入，车机 / 电视使用宽屏 Controls。
+HarmonyOS 版用同一套源码适配六类设备：手机 / 平板 / 2in1 共用桌面布局，手表支持表冠与触屏两种输入，车机 / 电视使用宽屏 Controls。
 
 它绘制一叠互相重叠的三角形，并统计 GPU 实际光栅化了多少个片段。这个数量可以判断你的显卡是 **IMR**（立即模式渲染，每个三角形的每个覆盖像素都要着色）还是 **TBR**（分块渲染，几何按 tile 分桶，每个像素基本只着色一次）。
 
@@ -33,12 +33,11 @@ HarmonyOS 版用同一个安装包适配六类设备：手机 / 平板 / 2in1 �
 | macOS Metal | [TriangleBin-macOS-Metal-v1.1.0.zip](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-macOS-Metal-v1.1.0.zip) | Universal（Intel / Apple Silicon） |
 | Android OpenGL ES | [TriangleBin-Android-OpenGLES-v1.1.0.apk](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Android-OpenGLES-v1.1.0.apk) | arm64-v8a / armeabi-v7a / x86 / x86_64 |
 | Android Vulkan | [TriangleBin-Android-Vulkan-v1.1.0.apk](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Android-Vulkan-v1.1.0.apk) | arm64-v8a / armeabi-v7a / x86 / x86_64 |
-| HarmonyOS 统一包 | [TriangleBin-HarmonyOS-Unified-20261120.hap](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-HarmonyOS-Unified-20261120.hap) | arm64-v8a / x86_64 |
 | HarmonyOS 源码包（自行签名） | [TriangleBin-HarmonyOS-Source-20261120.zip](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-HarmonyOS-Source-20261120.zip) | DevEco Studio 工程（不含签名） |
 
-> HarmonyOS 统一包在 <code>module.json</code> 中声明 <code>phone</code>、<code>tablet</code>、<code>2in1</code>、<code>wearable</code>、<code>car</code>、<code>tv</code> 六类设备；单包同时含 <code>arm64-v8a</code> 与 <code>x86_64</code>。
+> HarmonyOS 源码包的 <code>module.json</code> 声明 <code>phone</code>、<code>tablet</code>、<code>2in1</code>、<code>wearable</code>、<code>car</code>、<code>tv</code> 六类设备；构建产物为单个 HAP，同时含 <code>arm64-v8a</code> 与 <code>x86_64</code>。
 
-> 预编译 HAP 使用开发调试签名，Profile 绑定开发者已登记设备；未登记设备安装会失败。请下载源码包，用 DevEco Studio 的“自动签名”为自己的设备签名后构建。面向所有用户公开发布时，请使用 AppGallery Connect 的 release 证书/Profile。
+> HarmonyOS 不提供预编译 HAP：开发调试签名会绑定已登记设备，不适合公开下载。请下载源码包，用 DevEco Studio 的“自动签名”为自己的设备签名后构建；面向所有用户公开发布时，请使用 AppGallery Connect 的 release 证书/Profile。
 
 > **不确定下载哪个？** Windows 用户直接选 **DirectX 版**即可：兼容性最好，会在 D3D12 与 D3D11 之间自动选择。需要做 Vulkan 对比测试时再使用 **Vulkan 版**。下载文件的 SHA-256 校验值见 [Release 说明](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/tag/v1.1.0)。
 
@@ -46,7 +45,7 @@ Windows 两个版本都是**单文件启动器**：一个 <code>.exe</code> 内�
 
 macOS Metal 版解压后得到 <code>TriangleBin.app</code>，为 Intel 与 Apple Silicon 通用二进制。若首次打开被 Gatekeeper 拦截，请右键选择“打开”。
 
-HarmonyOS 统一包是单个 HAP，安装包内同时含 arm64-v8a 与 x86_64；手表每次进入前台会先选择“有表冠 / 无表冠（触屏）”，车机与电视自动使用宽屏 Controls 布局。
+HarmonyOS 源码包构建出的 HAP 内同时含 arm64-v8a 与 x86_64；手表每次进入前台会先选择“有表冠 / 无表冠（触屏）”，车机与电视自动使用宽屏 Controls 布局。
 
 ## 平台与系统要求
 
@@ -57,13 +56,13 @@ HarmonyOS 统一包是单个 HAP，安装包内同时含 arm64-v8a 与 x86_64；
 | macOS Metal | macOS 10.15+（Intel）/ 11.0+（Apple Silicon） | Metal | 通用二进制 |
 | Android OpenGL ES | Android 5.0+（API 21） | OpenGL ES 3.2 / 3.1（自动回退） | 单 APK 含 arm64-v8a / armeabi-v7a / x86 / x86_64；需要设备支持 ES 3.1 |
 | Android Vulkan | Android 7.0+（API 24） | Vulkan 1.0+ | 单 APK 含 arm64-v8a / armeabi-v7a / x86 / x86_64 |
-| HarmonyOS 统一包 | HarmonyOS 5.0+（API 12） | Vulkan 1.0 | 单 HAP 声明 phone / tablet / 2in1 / wearable / car / tv 六类设备；手表支持表冠与触屏两种输入 |
+| HarmonyOS 源码包 | HarmonyOS 5.0+（API 12） | Vulkan 1.0 | 构建产物为单 HAP，声明 phone / tablet / 2in1 / wearable / car / tv 六类设备；手表支持表冠与触屏两种输入 |
 
 ## 功能亮点
 
 **自动选择图形 API。** Windows DirectX 版会优先创建 Direct3D 12 设备，失败则回退到 Direct3D 11 并在日志中说明。
 
-**一套 HAP，六类设备。** HarmonyOS 版用同一个安装包声明 <code>phone</code>、<code>tablet</code>、<code>2in1</code>、<code>wearable</code>、<code>car</code>、<code>tv</code> 六类设备：手机 / 平板 / 2in1 使用桌面布局，车机 / 电视按屏幕尺寸切换到宽屏，手表使用圆形安全区面板。手表每次进入前台会先选择“有表冠”或“无表冠（触屏）”，分别走表冠旋转或 -/+ 按钮，两种模式都保留 ppf、Tris、Reset 与 Auto Increment。
+**一套源码，六类设备。** HarmonyOS 版用同一套源码声明 <code>phone</code>、<code>tablet</code>、<code>2in1</code>、<code>wearable</code>、<code>car</code>、<code>tv</code> 六类设备，构建产物是单个 HAP：手机 / 平板 / 2in1 使用桌面布局，车机 / 电视按屏幕尺寸切换到宽屏，手表使用圆形安全区面板。手表每次进入前台会先选择“有表冠”或“无表冠（触屏）”，分别走表冠旋转或 -/+ 按钮，两种模式都保留 ppf、Tris、Reset 与 Auto Increment。
 
 **XEngine 1.5× 空间超分。** HarmonyOS Vulkan 版加入 XEngine 空间超分：场景按每轴 2/3 的长度渲染，再由 <code>XEG_spatial_upscale</code> 扩展到原生分辨率，等效 1.5× 超分。设备支持时默认开启，Controls 内可随时切换；不支持时自动显示 <code>unsupported</code> 并保持关闭，不影响普通渲染路径。
 
@@ -81,13 +80,13 @@ HarmonyOS 统一包是单个 HAP，安装包内同时含 arm64-v8a 与 x86_64；
 
 ## 与原项目的关系
 
-这是一个多平台移植合集，不是打补丁。核心思路、控制项和测量方式来自 Swung 0x48 的 [TriangleBin](https://github.com/Swung0x48/TriangleBin)（MIT）；Windows DirectX 版源码位于本仓库，Windows Vulkan、macOS Metal、Android 两版与 HarmonyOS 统一包以 [Releases](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases) 成品提供（Android 源码在独立的 Gradle + NDK 工程中维护；HarmonyOS 源码在独立的 DevEco Studio 工程中维护）。
+这是一个多平台移植合集，不是打补丁。核心思路、控制项和测量方式来自 Swung 0x48 的 [TriangleBin](https://github.com/Swung0x48/TriangleBin)（MIT）；Windows DirectX 版源码位于本仓库，Windows Vulkan、macOS Metal、Android 两版以 [Releases](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases) 成品提供；HarmonyOS 源码包也作为 Release 资产提供（Android 源码在独立的 Gradle + NDK 工程中维护；HarmonyOS 源码在独立的 DevEco Studio 工程中维护）。
 
 | | [TriangleBin](https://github.com/Swung0x48/TriangleBin) | TriangleBin-MultiPlatform（本仓库） |
 |---|---|---|
 | 图形 API | OpenGL / OpenGL ES | Windows DirectX 11/12、Windows Vulkan 1.0、macOS Metal、Android OpenGL ES 3.1、Android Vulkan 1.0、HarmonyOS Vulkan 1.0 |
-| 平台 | Android（APK，按 ABI 分包）+ Windows x64 | Windows：x86 / x64 / ARM64；macOS：Intel / Apple Silicon；Android：单 APK 四 ABI；HarmonyOS：一个 HAP 覆盖 phone / tablet / 2in1 / wearable / car / tv |
-| 构建 | Gradle + Android NDK | CMake + MSVC（Windows DirectX 源码）；Vulkan / macOS / HarmonyOS 以 Releases 成品提供（HarmonyOS 为 DevEco Studio + ArkTS/C++ 工程） |
+| 平台 | Android（APK，按 ABI 分包）+ Windows x64 | Windows：x86 / x64 / ARM64；macOS：Intel / Apple Silicon；Android：单 APK 四 ABI；HarmonyOS：源码包构建出的单 HAP 覆盖 phone / tablet / 2in1 / wearable / car / tv |
+| 构建 | Gradle + Android NDK | CMake + MSVC（Windows DirectX 源码）；Vulkan / macOS 以 Releases 成品提供；HarmonyOS 以 Releases 源码包提供（DevEco Studio + ArkTS/C++ 工程） |
 | 选择 GPU | 无 | Windows DirectX / Vulkan 版支持运行时选择 GPU（F2） |
 | 启动失败诊断 | 无 | Windows 启动失败时生成诊断报告；Android 版在图形上下文创建失败时打印原因并优雅退出，不闪退 |
 | 空间超分 | 无 | HarmonyOS Vulkan 版支持 XEngine 1.5× 空间超分（<code>XEG_spatial_upscale</code>） |
@@ -115,9 +114,9 @@ Android 版源码位于独立的 Android 工程（Gradle + NDK），与本仓库
 |---|---|
 | ![Android OpenGL ES](docs/android-opengles.png) | ![Android Vulkan](docs/android-vulkan.png) |
 
-## HarmonyOS 统一包
+## HarmonyOS 源码包
 
-HarmonyOS 版把同一套 TriangleBin 逻辑移植到 ArkTS + C++/Vulkan，并用**一个 HAP** 覆盖六类设备：
+HarmonyOS 版把同一套 TriangleBin 逻辑移植到 ArkTS + C++/Vulkan，用**一套源码**覆盖六类设备，构建产物为单个 HAP：
 
 | 设备类型 | 布局与输入 |
 |---|---|
@@ -125,11 +124,11 @@ HarmonyOS 版把同一套 TriangleBin 逻辑移植到 ArkTS + C++/Vulkan，并�
 | wearable | 圆形安全区面板；每次进入前台先选择“有表冠”或“无表冠（触屏）”，分别使用表冠旋转或 -/+ 按钮调值 |
 | car / tv | 按屏幕尺寸切换的宽屏 Controls，适合车机与电视的远距离操作 |
 
-Vulkan 后端同时加入 XEngine 1.5× 空间超分：场景按每轴 2/3 的长度渲染，再由 <code>XEG_spatial_upscale</code> 扩展到原生分辨率。设备支持时默认开启，Controls 内可随时切换；不支持时自动回退到普通渲染。HAP 内含 arm64-v8a 与 x86_64，<code>module.json</code> 声明 <code>phone</code>、<code>tablet</code>、<code>2in1</code>、<code>wearable</code>、<code>car</code>、<code>tv</code> 六类 deviceTypes，最低 HarmonyOS 5.0（API 12）。
+Vulkan 后端同时加入 XEngine 1.5× 空间超分：场景按每轴 2/3 的长度渲染，再由 <code>XEG_spatial_upscale</code> 扩展到原生分辨率。设备支持时默认开启，Controls 内可随时切换；不支持时自动回退到普通渲染。构建出的 HAP 内含 arm64-v8a 与 x86_64，<code>module.json</code> 声明 <code>phone</code>、<code>tablet</code>、<code>2in1</code>、<code>wearable</code>、<code>car</code>、<code>tv</code> 六类 deviceTypes，最低 HarmonyOS 5.0（API 12）。
 
 ### 自行签名
 
-预编译 HAP 使用开发调试签名，Profile 绑定开发者已登记设备；未登记设备会安装失败。若你的设备不在其中，或希望用自己的开发者账号签名，请使用源码包：
+HarmonyOS 版仅提供源码包，不提供预编译 HAP：开发调试签名会绑定已登记设备，无法覆盖公开用户。请使用源码包，用自己的开发者账号签名：
 
 1. 下载并解压 <code>TriangleBin-HarmonyOS-Source-20261120.zip</code>；
 2. 用 DevEco Studio 5.0+ 打开工程，等待 ohpm / Hvigor Sync 完成；
@@ -222,7 +221,7 @@ Android 两版不在本仓库构建：它们来自独立的 Gradle + NDK 工程�
 
 ### HarmonyOS
 
-HarmonyOS 版不在本仓库构建：源码作为 Release 资产 <code>TriangleBin-HarmonyOS-Source-20261120.zip</code> 提供，是独立的 DevEco Studio 工程，使用 ArkTS 页面 + C++/Vulkan 渲染层，<code>compatibleSdkVersion</code> 为 5.0.0(12)。构建产物为单个 HAP，内含 arm64-v8a 与 x86_64，并声明 phone / tablet / 2in1 / wearable / car / tv 六类 deviceTypes；成品通过 Releases 分发。使用 DevEco Studio 的“自动签名”为自己的设备签名后即可构建，步骤见源码包内 <code>README.md</code>。
+HarmonyOS 版不在本仓库构建：源码作为 Release 资产 <code>TriangleBin-HarmonyOS-Source-20261120.zip</code> 提供，是独立的 DevEco Studio 工程，使用 ArkTS 页面 + C++/Vulkan 渲染层，<code>compatibleSdkVersion</code> 为 5.0.0(12)。构建产物为单个 HAP，内含 arm64-v8a 与 x86_64，并声明 phone / tablet / 2in1 / wearable / car / tv 六类 deviceTypes。使用 DevEco Studio 的“自动签名”为自己的设备签名后即可构建，步骤见源码包内 <code>README.md</code>。
 
 ### 单文件启动器
 
