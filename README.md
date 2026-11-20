@@ -4,8 +4,8 @@
 
 [![Release](https://img.shields.io/github/v/release/ddYIbb/TriangleBin-MultiPlatform?style=flat-square&label=release)](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases)
 [![License](https://img.shields.io/github/license/ddYIbb/TriangleBin-MultiPlatform?style=flat-square)](LICENSE)
-![Platform](https://img.shields.io/badge/platform-Windows%207%2B%20%7C%20macOS%2010.15%2B%20%7C%20Android%205.0%2B-blue?style=flat-square)
-![API](https://img.shields.io/badge/API-Direct3D%2011%2F12%20%C2%B7%20Vulkan%201.0%20%C2%B7%20Metal%20%C2%B7%20OpenGL%20ES%203.1-9cf?style=flat-square)
+![Platform](https://img.shields.io/badge/platform-Windows%207%2B%20%7C%20macOS%2010.15%2B%20%7C%20Android%205.0%2B%20%7C%20HarmonyOS%205.0%2B-blue?style=flat-square)
+![API](https://img.shields.io/badge/API-Direct3D%2011%2F12%20%C2%B7%20Vulkan%201.0%20%C2%B7%20Metal%20%C2%B7%20OpenGL%20ES%203.1%20%C2%B7%20HarmonyOS%20Vulkan-9cf?style=flat-square)
 
 [TriangleBin](https://github.com/Swung0x48/TriangleBin) 的多平台移植合集，用于测试 GPU 的填充率与着色顺序：
 
@@ -14,6 +14,9 @@
 - **macOS Metal** — Intel（macOS 10.15+）与 Apple Silicon（macOS 11.0+）通用版
 - **Android OpenGL ES** — OpenGL ES 3.2（不支持时自动回退 3.1），单 APK 含四套 ABI，支持 Android 5.0 及更新系统
 - **Android Vulkan** — Vulkan 1.0，单 APK 含四套 ABI，支持 Android 7.0 及更新系统
+- **HarmonyOS 统一包** — 一个 HAP 覆盖手机、平板、2in1、手表、车机、电视六类设备；Vulkan 1.0；内置 XEngine 1.5× 空间超分
+
+HarmonyOS 版用同一个安装包适配六类设备：手机 / 平板 / 2in1 共用桌面布局，手表支持表冠与触屏两种输入，车机 / 电视使用宽屏 Controls。
 
 它绘制一叠互相重叠的三角形，并统计 GPU 实际光栅化了多少个片段。这个数量可以判断你的显卡是 **IMR**（立即模式渲染，每个三角形的每个覆盖像素都要着色）还是 **TBR**（分块渲染，几何按 tile 分桶，每个像素基本只着色一次）。
 
@@ -30,12 +33,17 @@
 | macOS Metal | [TriangleBin-macOS-Metal-v1.1.0.zip](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-macOS-Metal-v1.1.0.zip) | Universal（Intel / Apple Silicon） |
 | Android OpenGL ES | [TriangleBin-Android-OpenGLES-v1.1.0.apk](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Android-OpenGLES-v1.1.0.apk) | arm64-v8a / armeabi-v7a / x86 / x86_64 |
 | Android Vulkan | [TriangleBin-Android-Vulkan-v1.1.0.apk](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-Android-Vulkan-v1.1.0.apk) | arm64-v8a / armeabi-v7a / x86 / x86_64 |
+| HarmonyOS 统一包 | [TriangleBin-HarmonyOS-Unified-20261120.hap](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/download/v1.1.0/TriangleBin-HarmonyOS-Unified-20261120.hap) | arm64-v8a / x86_64 |
+
+> HarmonyOS 统一包在 <code>module.json</code> 中声明 <code>phone</code>、<code>tablet</code>、<code>2in1</code>、<code>wearable</code>、<code>car</code>、<code>tv</code> 六类设备；单包同时含 <code>arm64-v8a</code> 与 <code>x86_64</code>。
 
 > **不确定下载哪个？** Windows 用户直接选 **DirectX 版**即可：兼容性最好，会在 D3D12 与 D3D11 之间自动选择。需要做 Vulkan 对比测试时再使用 **Vulkan 版**。下载文件的 SHA-256 校验值见 [Release 说明](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases/tag/v1.1.0)。
 
 Windows 两个版本都是**单文件启动器**：一个 <code>.exe</code> 内含 x86 / x64 / ARM64 三份程序，启动时自动识别 CPU 并运行对应版本，退出后自动清理；无需安装，不写注册表。
 
 macOS Metal 版解压后得到 <code>TriangleBin.app</code>，为 Intel 与 Apple Silicon 通用二进制。若首次打开被 Gatekeeper 拦截，请右键选择“打开”。
+
+HarmonyOS 统一包是单个 HAP，安装包内同时含 arm64-v8a 与 x86_64；手表每次进入前台会先选择“有表冠 / 无表冠（触屏）”，车机与电视自动使用宽屏 Controls 布局。
 
 ## 平台与系统要求
 
@@ -46,10 +54,15 @@ macOS Metal 版解压后得到 <code>TriangleBin.app</code>，为 Intel 与 Appl
 | macOS Metal | macOS 10.15+（Intel）/ 11.0+（Apple Silicon） | Metal | 通用二进制 |
 | Android OpenGL ES | Android 5.0+（API 21） | OpenGL ES 3.2 / 3.1（自动回退） | 单 APK 含 arm64-v8a / armeabi-v7a / x86 / x86_64；需要设备支持 ES 3.1 |
 | Android Vulkan | Android 7.0+（API 24） | Vulkan 1.0+ | 单 APK 含 arm64-v8a / armeabi-v7a / x86 / x86_64 |
+| HarmonyOS 统一包 | HarmonyOS 5.0+（API 12） | Vulkan 1.0 | 单 HAP 声明 phone / tablet / 2in1 / wearable / car / tv 六类设备；手表支持表冠与触屏两种输入 |
 
 ## 功能亮点
 
 **自动选择图形 API。** Windows DirectX 版会优先创建 Direct3D 12 设备，失败则回退到 Direct3D 11 并在日志中说明。
+
+**一套 HAP，六类设备。** HarmonyOS 版用同一个安装包声明 <code>phone</code>、<code>tablet</code>、<code>2in1</code>、<code>wearable</code>、<code>car</code>、<code>tv</code> 六类设备：手机 / 平板 / 2in1 使用桌面布局，车机 / 电视按屏幕尺寸切换到宽屏，手表使用圆形安全区面板。手表每次进入前台会先选择“有表冠”或“无表冠（触屏）”，分别走表冠旋转或 -/+ 按钮，两种模式都保留 ppf、Tris、Reset 与 Auto Increment。
+
+**XEngine 1.5× 空间超分。** HarmonyOS Vulkan 版加入 XEngine 空间超分：场景按每轴 2/3 的长度渲染，再由 <code>XEG_spatial_upscale</code> 扩展到原生分辨率，等效 1.5× 超分。设备支持时默认开启，Controls 内可随时切换；不支持时自动显示 <code>unsupported</code> 并保持关闭，不影响普通渲染路径。
 
 **选择 GPU（F2）。** Windows DirectX 与 Windows Vulkan 版均可在运行时选择显卡：DirectX 版列出所有硬件 DXGI 适配器及驱动版本，不支持 D3D12 的会标注 <code>(D3D11 only)</code>；Vulkan 版列出 Vulkan 物理设备及驱动/Vulkan 版本。这在同时有核显和独显的笔记本上很有用——Windows 默认分配的那块不一定是你想测的那块。<code>Auto (best GPU for this app)</code> 保持默认行为。切换适配器需要重建设备，界面会对连续点击做 300 ms 防抖，合并成一次切换，并等待上一帧完成后才释放旧设备，避免偶发卡死。同一块物理显卡被驱动或虚拟显示适配器重复枚举时，选择列表会按 PCI 身份（VendorId / DeviceId / SubSysId / Revision）和驱动版本自动合并，只保留一项。
 
@@ -65,15 +78,16 @@ macOS Metal 版解压后得到 <code>TriangleBin.app</code>，为 Intel 与 Appl
 
 ## 与原项目的关系
 
-这是一个多平台移植合集，不是打补丁。核心思路、控制项和测量方式来自 Swung 0x48 的 [TriangleBin](https://github.com/Swung0x48/TriangleBin)（MIT）；Windows DirectX 版源码位于本仓库，Windows Vulkan、macOS Metal 与 Android 两版以 [Releases](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases) 成品提供（Android 源码在独立的 Gradle + NDK 工程中维护）。
+这是一个多平台移植合集，不是打补丁。核心思路、控制项和测量方式来自 Swung 0x48 的 [TriangleBin](https://github.com/Swung0x48/TriangleBin)（MIT）；Windows DirectX 版源码位于本仓库，Windows Vulkan、macOS Metal、Android 两版与 HarmonyOS 统一包以 [Releases](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases) 成品提供（Android 源码在独立的 Gradle + NDK 工程中维护；HarmonyOS 源码在独立的 DevEco Studio 工程中维护）。
 
 | | [TriangleBin](https://github.com/Swung0x48/TriangleBin) | TriangleBin-MultiPlatform（本仓库） |
 |---|---|---|
-| 图形 API | OpenGL / OpenGL ES | Windows DirectX 11/12、Windows Vulkan 1.0、macOS Metal、Android OpenGL ES 3.1、Android Vulkan 1.0 |
-| 平台 | Android（APK，按 ABI 分包）+ Windows x64 | Windows：x86 / x64 / ARM64；macOS：Intel / Apple Silicon；Android：单 APK 四 ABI |
-| 构建 | Gradle + Android NDK | CMake + MSVC（Windows DirectX 源码）；Vulkan / macOS 以 Releases 成品提供 |
+| 图形 API | OpenGL / OpenGL ES | Windows DirectX 11/12、Windows Vulkan 1.0、macOS Metal、Android OpenGL ES 3.1、Android Vulkan 1.0、HarmonyOS Vulkan 1.0 |
+| 平台 | Android（APK，按 ABI 分包）+ Windows x64 | Windows：x86 / x64 / ARM64；macOS：Intel / Apple Silicon；Android：单 APK 四 ABI；HarmonyOS：一个 HAP 覆盖 phone / tablet / 2in1 / wearable / car / tv |
+| 构建 | Gradle + Android NDK | CMake + MSVC（Windows DirectX 源码）；Vulkan / macOS / HarmonyOS 以 Releases 成品提供（HarmonyOS 为 DevEco Studio + ArkTS/C++ 工程） |
 | 选择 GPU | 无 | Windows DirectX / Vulkan 版支持运行时选择 GPU（F2） |
 | 启动失败诊断 | 无 | Windows 启动失败时生成诊断报告；Android 版在图形上下文创建失败时打印原因并优雅退出，不闪退 |
+| 空间超分 | 无 | HarmonyOS Vulkan 版支持 XEngine 1.5× 空间超分（<code>XEG_spatial_upscale</code>） |
 
 ## Android 版与原版 TriangleBin 的区别
 
@@ -98,6 +112,18 @@ Android 版源码位于独立的 Android 工程（Gradle + NDK），与本仓库
 |---|---|
 | ![Android OpenGL ES](docs/android-opengles.png) | ![Android Vulkan](docs/android-vulkan.png) |
 
+## HarmonyOS 统一包
+
+HarmonyOS 版把同一套 TriangleBin 逻辑移植到 ArkTS + C++/Vulkan，并用**一个 HAP** 覆盖六类设备：
+
+| 设备类型 | 布局与输入 |
+|---|---|
+| phone / tablet / 2in1 | 与桌面版一致的 Controls 面板，按屏幕尺寸自适应 |
+| wearable | 圆形安全区面板；每次进入前台先选择“有表冠”或“无表冠（触屏）”，分别使用表冠旋转或 -/+ 按钮调值 |
+| car / tv | 按屏幕尺寸切换的宽屏 Controls，适合车机与电视的远距离操作 |
+
+Vulkan 后端同时加入 XEngine 1.5× 空间超分：场景按每轴 2/3 的长度渲染，再由 <code>XEG_spatial_upscale</code> 扩展到原生分辨率。设备支持时默认开启，Controls 内可随时切换；不支持时自动回退到普通渲染。HAP 内含 arm64-v8a 与 x86_64，<code>module.json</code> 声明 <code>phone</code>、<code>tablet</code>、<code>2in1</code>、<code>wearable</code>、<code>car</code>、<code>tv</code> 六类 deviceTypes，最低 HarmonyOS 5.0（API 12）。
+
 ## 界面说明
 
 | 控件 | 含义 |
@@ -110,6 +136,7 @@ Android 版源码位于独立的 Android 工程（Gradle + NDK），与本仓库
 | <code>Frag Count</code> | 本帧 GPU 实际光栅化的片段数，应当不超过目标值。 |
 | <code>clear color</code> | 背景色。 |
 | <code>F2</code> | 打开 / 关闭选择 GPU 窗口（仅 Windows 版；Android 版没有多适配器选择，Controls 顶部直接显示当前设备与驱动/API 版本）。 |
+| <code>XEngine 1.5× Upscale</code> | HarmonyOS Vulkan 版空间超分开关；设备支持时默认开启，不支持时显示 <code>unsupported</code>。 |
 
 怎么看结果：提高 <code>Tris</code>，观察 <code>Frag Count</code>。如果它随三角形数量持续上升，说明每个三角形的覆盖像素都被着色，这是 IMR 的行为；如果它明显低于目标值并趋于平稳，说明几何被分桶、每个像素每 tile 只着色一次，这是 TBR 的行为。
 
@@ -177,6 +204,10 @@ ARM64 静态链接 SDL2，因此不需要 <code>SDL2.dll</code>。
 ### Android
 
 Android 两版不在本仓库构建：它们来自独立的 Gradle + NDK 工程（JDK 17、Gradle 7.6.4、Android SDK 31、NDK 27.0.12077973），GLES 版 <code>minSdk 21</code>、Vulkan 版 <code>minSdk 24</code>，两者的 ABI 均为 arm64-v8a / armeabi-v7a / x86 / x86_64。构建产物直接作为 Release 资产分发，本仓库只提供 README 与截图。
+
+### HarmonyOS
+
+HarmonyOS 版不在本仓库构建：源码位于独立的 DevEco Studio 工程，使用 ArkTS 页面 + C++/Vulkan 渲染层，<code>compatibleSdkVersion</code> 为 5.0.0(12)。构建产物为单个 HAP，内含 arm64-v8a 与 x86_64，并声明 phone / tablet / 2in1 / wearable / car / tv 六类 deviceTypes；成品通过 Releases 分发。
 
 ### 单文件启动器
 
