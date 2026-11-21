@@ -4,14 +4,14 @@ English | [中文](README.md)
 
 [![Release](https://img.shields.io/github/v/release/ddYIbb/TriangleBin-MultiPlatform?style=flat-square&label=release)](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases)
 [![License](https://img.shields.io/github/license/ddYIbb/TriangleBin-MultiPlatform?style=flat-square)](LICENSE)
-![Platform](https://img.shields.io/badge/platform-Windows%207%2B%20%7C%20macOS%2010.15%2B%20%7C%20Android%205.0%2B%20%7C%20HarmonyOS%205.0%2B-blue?style=flat-square)
+![Platform](https://img.shields.io/badge/platform-Windows%207%2B%20%7C%20macOS%2010.13%2B%20%7C%20Android%205.0%2B%20%7C%20HarmonyOS%205.0%2B-blue?style=flat-square)
 ![API](https://img.shields.io/badge/API-Direct3D%2011%2F12%20%C2%B7%20Vulkan%201.0%20%C2%B7%20Metal%20%C2%B7%20OpenGL%20ES%203.1%20%C2%B7%20HarmonyOS%20Vulkan-9cf?style=flat-square)
 
 A multi-platform port collection of [TriangleBin](https://github.com/Swung0x48/TriangleBin) for testing GPU fill rate and shading order:
 
 - **Windows DirectX** — Direct3D 11 / 12, x86 / x64 / ARM64, Windows 7 and newer
 - **Windows Vulkan** — Vulkan 1.0, x86 / x64 / ARM64, Windows 7 and newer (requires Vulkan support from your graphics driver)
-- **macOS Metal** — Universal build for Intel (macOS 10.15+) and Apple Silicon (macOS 11.0+)
+- **macOS Metal** — Universal build for Intel (macOS 10.13+) and Apple Silicon (macOS 11.0+)
 - **Android OpenGL ES** — OpenGL ES 3.2 with automatic fallback to 3.1, one APK with four ABIs, Android 5.0 and newer
 - **Android Vulkan** — Vulkan 1.0, one APK with four ABIs, Android 7.0 and newer
 - **HarmonyOS source (self-sign)** — one source tree for phone, tablet, 2in1, wearable, car and TV; Vulkan 1.0; XEngine 1.5× spatial upscaling built in
@@ -53,7 +53,7 @@ The HarmonyOS source package builds a single HAP with arm64-v8a and x86_64 paylo
 |---|---|---|---|
 | Windows DirectX | Windows 7 and newer | Direct3D 12 / 11 (automatic) | Shaders are embedded; no <code>d3dcompiler_47.dll</code> or VC++ runtime required |
 | Windows Vulkan | Windows 7 and newer | Vulkan 1.0 core + <code>VK_KHR_swapchain</code> | Requires a Vulkan loader from your graphics driver |
-| macOS Metal | macOS 10.15+ (Intel) / 11.0+ (Apple Silicon) | Metal | Universal binary |
+| macOS Metal | macOS 10.13+ (Intel) / 11.0+ (Apple Silicon) | Metal | Universal binary |
 | Android OpenGL ES | Android 5.0+ (API 21) | OpenGL ES 3.2 / 3.1 (automatic) | One APK with arm64-v8a / armeabi-v7a / x86 / x86_64; requires ES 3.1 support |
 | Android Vulkan | Android 7.0+ (API 24) | Vulkan 1.0+ | One APK with arm64-v8a / armeabi-v7a / x86 / x86_64 |
 | HarmonyOS source | HarmonyOS 5.0+ (API 12) | Vulkan 1.0 | Builds one HAP declaring phone / tablet / 2in1 / wearable / car / tv; wearables support crown and touch input |

@@ -4,14 +4,14 @@
 
 [![Release](https://img.shields.io/github/v/release/ddYIbb/TriangleBin-MultiPlatform?style=flat-square&label=release)](https://github.com/ddYIbb/TriangleBin-MultiPlatform/releases)
 [![License](https://img.shields.io/github/license/ddYIbb/TriangleBin-MultiPlatform?style=flat-square)](LICENSE)
-![Platform](https://img.shields.io/badge/platform-Windows%207%2B%20%7C%20macOS%2010.15%2B%20%7C%20Android%205.0%2B%20%7C%20HarmonyOS%205.0%2B-blue?style=flat-square)
+![Platform](https://img.shields.io/badge/platform-Windows%207%2B%20%7C%20macOS%2010.13%2B%20%7C%20Android%205.0%2B%20%7C%20HarmonyOS%205.0%2B-blue?style=flat-square)
 ![API](https://img.shields.io/badge/API-Direct3D%2011%2F12%20%C2%B7%20Vulkan%201.0%20%C2%B7%20Metal%20%C2%B7%20OpenGL%20ES%203.1%20%C2%B7%20HarmonyOS%20Vulkan-9cf?style=flat-square)
 
 [TriangleBin](https://github.com/Swung0x48/TriangleBin) 的多平台移植合集，用于测试 GPU 的填充率与着色顺序：
 
 - **Windows DirectX** — Direct3D 11 / 12，x86 / x64 / ARM64，支持 Windows 7 及更新系统
 - **Windows Vulkan** — Vulkan 1.0，x86 / x64 / ARM64，支持 Windows 7 及更新系统（需显卡驱动提供 Vulkan 支持）
-- **macOS Metal** — Intel（macOS 10.15+）与 Apple Silicon（macOS 11.0+）通用版
+- **macOS Metal** — Intel（macOS 10.13+）与 Apple Silicon（macOS 11.0+）通用版
 - **Android OpenGL ES** — OpenGL ES 3.2（不支持时自动回退 3.1），单 APK 含四套 ABI，支持 Android 5.0 及更新系统
 - **Android Vulkan** — Vulkan 1.0，单 APK 含四套 ABI，支持 Android 7.0 及更新系统
 - **HarmonyOS 源码包（自行签名）** — 一套源码覆盖手机、平板、2in1、手表、车机、电视六类设备；Vulkan 1.0；内置 XEngine 1.5× 空间超分
@@ -53,7 +53,7 @@ HarmonyOS 源码包构建出的 HAP 内同时含 arm64-v8a 与 x86_64；手表�
 |---|---|---|---|
 | Windows DirectX | Windows 7 及更新 | Direct3D 12 / 11（自动选择） | 着色器已内嵌，无需 <code>d3dcompiler_47.dll</code> 或 VC++ 运行库 |
 | Windows Vulkan | Windows 7 及更新 | Vulkan 1.0 core + <code>VK_KHR_swapchain</code> | 需要显卡驱动提供 Vulkan loader |
-| macOS Metal | macOS 10.15+（Intel）/ 11.0+（Apple Silicon） | Metal | 通用二进制 |
+| macOS Metal | macOS 10.13+（Intel）/ 11.0+（Apple Silicon） | Metal | 通用二进制 |
 | Android OpenGL ES | Android 5.0+（API 21） | OpenGL ES 3.2 / 3.1（自动回退） | 单 APK 含 arm64-v8a / armeabi-v7a / x86 / x86_64；需要设备支持 ES 3.1 |
 | Android Vulkan | Android 7.0+（API 24） | Vulkan 1.0+ | 单 APK 含 arm64-v8a / armeabi-v7a / x86 / x86_64 |
 | HarmonyOS 源码包 | HarmonyOS 5.0+（API 12） | Vulkan 1.0 | 构建产物为单 HAP，声明 phone / tablet / 2in1 / wearable / car / tv 六类设备；手表支持表冠与触屏两种输入 |
